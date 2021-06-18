@@ -1,0 +1,67 @@
+plugins {
+    id "com.google.protobuf"
+    id 'java-library'
+    id 'org.jetbrains.kotlin.jvm'
+    id 'idea'
+}
+
+group 'ru.dmitriyt.dcs'
+version '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+sourceSets {
+    main {
+        proto {
+            srcDir "src/main/proto"
+        }
+    }
+}
+
+def grpcVersion = "1.30.0"
+def grpcKotlinVersion = "0.1.5"
+def protobufVersion = "3.12.2"
+
+protobuf {
+    protoc {
+        artifact = "com.google.protobuf:protoc:$protobufVersion"
+    }
+    plugins {
+        grpc {
+            artifact = "io.grpc:protoc-gen-grpc-java:$grpcVersion"
+        }
+        grpckt {
+            artifact = "io.grpc:protoc-gen-grpc-kotlin:$grpcKotlinVersion"
+        }
+    }
+    generateProtoTasks {
+        all().each {
+            it.builtins {
+                remove javanano
+                java {
+                    // option 'lite'
+                }
+            }
+            it.plugins {
+                grpc {
+                    // option 'lite'
+                }
+                grpckt {
+                    // option 'lite'
+                }
+            }
+        }
+    }
+}
+
+dependencies {
+
+    api "io.grpc:grpc-protobuf:$grpcVersion"
+    api "io.grpc:grpc-stub:$grpcVersion"
+    def withoutGrpcProtobuf = { exclude group: 'io.grpc', module: 'grpc-protobuf' }
+    api "io.grpc:grpc-kotlin-stub:$grpcKotlinVersion", withoutGrpcProtobuf
+    api "io.grpc:grpc-netty:$grpcVersion"
+    implementation "io.perfmark:perfmark-api:0.24.0"
+}

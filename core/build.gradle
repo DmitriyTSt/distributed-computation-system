@@ -1,0 +1,12 @@
+plugins {
+    id 'java'
+    id 'org.jetbrains.kotlin.jvm'
+}
+
+group 'ru.dmitriyt.dcs'
+version '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+

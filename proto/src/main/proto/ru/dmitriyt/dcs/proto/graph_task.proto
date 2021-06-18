@@ -1,0 +1,37 @@
+syntax = "proto3";
+package ru.dmitriyt.dcs.proto;
+option java_outer_classname = "GraphTaskProto";
+option java_package = "ru.dmitriyt.dcs.proto";
+
+service GraphTask {
+  // Получить пачку графов на выполнение
+  rpc GetTask(GetTaskRequest) returns (GetTaskResponse);
+  // Отослать результаты выполнения
+  rpc SendTaskResult(SendTaskResultRequest) returns (SendTaskResultResponse);
+}
+
+message GetTaskRequest {}
+message GetTaskResponse {
+  Task task = 1;
+}
+
+message Task {
+  int32 id = 1;
+  repeated string graphs = 2;
+}
+
+message SendTaskResultRequest {
+  TaskResult taskResult = 1;
+}
+
+message TaskResult {
+  int32 taskId = 1;
+  repeated GraphResult results = 2;
+}
+
+message GraphResult {
+  string graph = 1;
+  int32 invariant = 2;
+}
+
+message SendTaskResultResponse {}

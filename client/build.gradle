@@ -1,0 +1,30 @@
+plugins {
+    id 'java'
+    id 'org.jetbrains.kotlin.jvm'
+    id "com.google.protobuf"
+    id 'idea'
+}
+
+group 'ru.dmitriyt.dcs.client'
+version '1.0'
+
+repositories {
+    mavenCentral()
+}
+
+jar {
+    manifest {
+        attributes 'Implementation-Title': 'DCS_Client',
+                'Implementation-Version': version,
+                'Main-Class': 'ru.dmitriyt.dcs.client.MainKt'
+    }
+    baseName = project.name
+    from { configurations.compileClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
+}
+
+dependencies {
+    implementation project(":core")
+    implementation project(":proto")
+
+    implementation "io.perfmark:perfmark-api:0.24.0"
+}

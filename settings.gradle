@@ -1,0 +1,6 @@
+rootProject.name = 'dcs'
+include 'client'
+include 'proto'
+include 'server'
+include 'core'
+
