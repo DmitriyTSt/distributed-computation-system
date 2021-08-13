@@ -15,6 +15,7 @@ class ClientApp(private val argsManager: ArgsManager) {
 
     fun start() {
         println("Client onStart")
+        println("Connecting to ${argsManager.serverAddress}:${argsManager.port}")
         val graphTask = CliqueNumberTask()
         val solver = if (argsManager.isMulti) {
             MultiThreadSolver(graphTask)
