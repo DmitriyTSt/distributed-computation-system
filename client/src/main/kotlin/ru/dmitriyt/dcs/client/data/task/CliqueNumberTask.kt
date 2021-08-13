@@ -1,6 +1,6 @@
 package ru.dmitriyt.dcs.client.data.task
 
-import ru.dmitriyt.dcs.core.domain.GraphTask
+import ru.dmitriyt.dcs.core.GraphTask
 import ru.dmitriyt.dcs.core.presentation.Graph
 import kotlin.math.max
 

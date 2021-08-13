@@ -8,5 +8,9 @@ version '1.0-SNAPSHOT'
 
 repositories {
     mavenCentral()
+    maven { url "https://jitpack.io" }
 }
 
+dependencies {
+    implementation 'com.github.DmitriyTSt:dcs-core:1.0'
+}
