@@ -17,6 +17,12 @@ plugins {
 group 'ru.dmitriyt.dcs'
 version '1.0-SNAPSHOT'
 
+allprojects {
+    repositories {
+        maven { url "https://jitpack.io" }
+    }
+}
+
 repositories {
     mavenCentral()
     google()

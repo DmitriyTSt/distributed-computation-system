@@ -3,6 +3,7 @@ plugins {
     id 'org.jetbrains.kotlin.jvm'
     id "com.google.protobuf"
     id 'idea'
+    id 'edu.sc.seis.launch4j' version '2.5.0'
 }
 
 group 'ru.dmitriyt.dcs.client'
@@ -10,7 +11,6 @@ version '1.0'
 
 repositories {
     mavenCentral()
-    maven { url "https://jitpack.io" }
 }
 
 jar {
@@ -22,6 +22,29 @@ jar {
     archiveBaseName.set("dcs-${project.name}")
     from { configurations.compileClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
 }
+
+launch4j { // used for windows
+    mainClassName = 'ru.dmitriyt.dcs.client.MainKt'
+    headerType = 'console'
+    bundledJrePath = 'jre'
+    bundledJre64Bit = true
+    jreMinVersion = '8'
+}
+
+task packageExecutableDistribution(type: Zip) {
+    archiveFileName = "dcs-client-${project.version}.zip"
+    destinationDirectory = file("$buildDir/distExecutable")
+
+    from "$buildDir/launch4j"
+}
+
+task addJreToDistributable(type: Copy) {
+    from zipTree("resources/desktop-deployment/jre.zip")
+    destinationDir = file("$buildDir/launch4j")
+}
+
+packageExecutableDistribution.dependsOn createExe
+packageExecutableDistribution.dependsOn addJreToDistributable
 
 dependencies {
     implementation 'com.github.DmitriyTSt:dcs-core:1.0'
