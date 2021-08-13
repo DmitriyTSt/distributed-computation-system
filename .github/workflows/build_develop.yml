@@ -27,5 +27,5 @@ jobs:
       - name: Upload client jar
         uses: actions/upload-artifact@v2
         with:
-          name: dcs-server.jar
+          name: dcs-client.jar
           path: client/build/libs/dcs-client.jar
