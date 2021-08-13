@@ -10,6 +10,7 @@ version '1.0'
 
 repositories {
     mavenCentral()
+    maven { url "https://jitpack.io" }
 }
 
 jar {
@@ -23,6 +24,7 @@ jar {
 }
 
 dependencies {
+    implementation 'com.github.DmitriyTSt:dcs-core:1.0'
     implementation project(":core")
     implementation project(":proto")
 

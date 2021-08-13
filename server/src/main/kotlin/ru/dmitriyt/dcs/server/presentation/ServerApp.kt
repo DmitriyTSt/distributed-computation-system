@@ -9,7 +9,6 @@ import ru.dmitriyt.dcs.server.ArgsManager
 import ru.dmitriyt.dcs.server.data.service.GraphTaskService
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicIntegerArray
-import kotlin.system.exitProcess
 
 class ServerApp(private val argsManager: ArgsManager) {
     private val ans = AtomicIntegerArray(Graph.MAX_N)
@@ -50,13 +49,13 @@ class ServerApp(private val argsManager: ArgsManager) {
         taskResult.results.forEach {
             ans.getAndIncrement(it.invariant)
         }
-//        println("total = ${this.total.get()}, processed = ${processedGraphs.get()}, inprogress = $tasksInProgress, isComplete = $isCompleted")
         if (this.total.get() == processedGraphs.get() && tasksInProgress == 0 && isCompleted) {
             resultMutex.withLock {
                 if (!resultHandled) {
                     resultHandled = true
                     endTime = System.currentTimeMillis()
                     printResultAndStop()
+                    server.shutdown()
                 }
             }
         }
@@ -72,6 +71,5 @@ class ServerApp(private val argsManager: ArgsManager) {
             println("$index: $count")
         }
         println(TimeHelper.getFormattedSpentTime(startTime, endTime))
-        exitProcess(0)
     }
 }

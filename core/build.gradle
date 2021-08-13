@@ -3,14 +3,9 @@ plugins {
     id 'org.jetbrains.kotlin.jvm'
 }
 
-group 'ru.dmitriyt.dcs'
-version '1.0-SNAPSHOT'
+group 'ru.dmitriyt.dcs.core'
+version '1.0'
 
 repositories {
     mavenCentral()
-    maven { url "https://jitpack.io" }
-}
-
-dependencies {
-    implementation 'com.github.DmitriyTSt:dcs-core:1.0'
 }
