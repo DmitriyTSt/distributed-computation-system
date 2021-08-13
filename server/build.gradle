@@ -14,10 +14,10 @@ repositories {
 jar {
     manifest {
         attributes 'Implementation-Title': 'DCS_Server',
-                'Implementation-Version': version,
+                'Implementation-Version': project.version,
                 'Main-Class': 'ru.dmitriyt.dcs.server.MainKt'
     }
-    baseName = project.name
+    archiveBaseName.set("dcs-${project.name}")
     from { configurations.compileClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
 }
 
