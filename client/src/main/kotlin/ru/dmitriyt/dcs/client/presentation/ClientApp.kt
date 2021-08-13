@@ -12,7 +12,6 @@ class ClientApp(private val argsManager: ArgsManager) {
         GraphTaskRepository(argsManager.serverAddress, argsManager.port)
     }
     private val completedTaskCount = AtomicInteger(0)
-    private val lock = Any()
 
     fun start() {
         println("Client onStart")
