@@ -17,7 +17,7 @@ jar {
                 'Implementation-Version': project.version,
                 'Main-Class': 'ru.dmitriyt.dcs.server.MainKt'
     }
-    archiveBaseName.set("dcs-${project.name}")
+    archiveFileName.set("dcs-${project.name}.jar")
     from { configurations.compileClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
 }
 

@@ -19,7 +19,7 @@ jar {
                 'Implementation-Version': project.version,
                 'Main-Class': 'ru.dmitriyt.dcs.client.MainKt'
     }
-    archiveBaseName.set("dcs-${project.name}")
+    archiveFileName.set("dcs-${project.name}.jar")
     from { configurations.compileClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
 }
 
@@ -32,7 +32,7 @@ launch4j { // used for windows
 }
 
 task packageExecutableDistribution(type: Zip) {
-    archiveFileName = "dcs-client-${project.version}.zip"
+    archiveFileName = "dcs-client.zip"
     destinationDirectory = file("$buildDir/distExecutable")
 
     from "$buildDir/launch4j"
