@@ -1,7 +1,6 @@
 package ru.dmitriyt.dcs.client.data.repository
 
 import io.grpc.ManagedChannelBuilder
-import io.grpc.StatusRuntimeException
 import ru.dmitriyt.dcs.client.data.mapper.GraphTaskMapper
 import ru.dmitriyt.dcs.core.data.Task
 import ru.dmitriyt.dcs.core.data.TaskResult
