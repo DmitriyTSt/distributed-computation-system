@@ -5,7 +5,7 @@ import ru.dmitriyt.dcs.core.data.DefaultConfig
 class ArgsManager(_args: Array<String>) {
     private val args = _args.toList()
 
-    val serverAddress = getParam("--server") ?: DefaultConfig.DEFAULT_SERVER
+    val isDebug = args.contains("-d")
     val port = getParam("--port")?.toIntOrNull() ?: DefaultConfig.DEFAULT_PORT
     val partSize = getParam("-p")?.toIntOrNull() ?: 1000
 

@@ -22,7 +22,15 @@ class ServerApp(private val argsManager: ArgsManager) {
 
     private val server = ServerBuilder
         .forPort(argsManager.port)
-        .addService(GraphTaskService(argsManager.partSize, ::handleStart, ::handleResult) { isCompleted = true })
+        .addService(
+            GraphTaskService(
+                isDebug = argsManager.isDebug,
+                partSize = argsManager.partSize,
+                startTaskHandler = ::handleStart,
+                endTaskHandler = ::handleResult,
+                onGraphEmpty = { isCompleted = true },
+            )
+        )
         .build()
 
     fun start() {
@@ -30,7 +38,7 @@ class ServerApp(private val argsManager: ArgsManager) {
         println("Server started at port ${argsManager.port}")
         Runtime.getRuntime().addShutdownHook(
             Thread {
-                this.server.shutdown()
+                server.shutdown()
             }
         )
         server.awaitTermination()
@@ -49,19 +57,27 @@ class ServerApp(private val argsManager: ArgsManager) {
         taskResult.results.forEach {
             ans.getAndIncrement(it.invariant)
         }
-        if (this.total.get() == processedGraphs.get() && tasksInProgress == 0 && isCompleted) {
+        if (argsManager.isDebug) {
+            println("total = %d, processed = %d, inProgress = %d, isCompleted = %s".format(
+                total.get(),
+                processedGraphs.get(),
+                tasksInProgress,
+                isCompleted.toString(),
+            ))
+        }
+        if (this.total.get() <= processedGraphs.get() && tasksInProgress == 0 && isCompleted) {
             resultMutex.withLock {
                 if (!resultHandled) {
                     resultHandled = true
                     endTime = System.currentTimeMillis()
-                    printResultAndStop()
+                    printResult()
                     server.shutdown()
                 }
             }
         }
     }
 
-    private fun printResultAndStop() {
+    private fun printResult() {
         println("Total: ${total.get()}")
         val simpleAns = mutableListOf<Int>()
         repeat(Graph.MAX_N) {

@@ -25,8 +25,12 @@ class ClientApp(private val argsManager: ArgsManager) {
         solver.run(inputProvider = {
             repository.get().getTask()
         }, resultHandler = {
-            repository.get().sendResult(it)
-            completedTaskCount.getAndAdd(it.results.size)
+            try {
+                repository.get().sendResult(it)
+                completedTaskCount.getAndAdd(it.results.size)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }, onFinish = {
             repository.get().close()
         })

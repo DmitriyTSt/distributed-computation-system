@@ -13,21 +13,21 @@ class GraphTaskRepository(server: String, port: Int) : Closeable {
     private val stub = GraphTaskGrpc.newBlockingStub(channel)
 
     fun getTask(): Task {
-        return stub.getTask(
-            GraphTaskProto.GetTaskRequest.newBuilder().build()
-        ).task.let { GraphTaskMapper.fromApiToModel(it) }
+        try {
+            return stub.getTask(
+                GraphTaskProto.GetTaskRequest.newBuilder().build()
+            ).task.let { GraphTaskMapper.fromApiToModel(it) }
+        } catch (e: Exception) {
+            return Task.EMPTY
+        }
     }
 
     fun sendResult(taskResult: TaskResult) {
-        try {
-            stub.sendTaskResult(
-                GraphTaskProto.SendTaskResultRequest.newBuilder()
-                    .setTaskResult(GraphTaskMapper.fromModelToApi(taskResult))
-                    .build()
-            )
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
+        stub.sendTaskResult(
+            GraphTaskProto.SendTaskResultRequest.newBuilder()
+                .setTaskResult(GraphTaskMapper.fromModelToApi(taskResult))
+                .build()
+        )
     }
 
     override fun close() {
