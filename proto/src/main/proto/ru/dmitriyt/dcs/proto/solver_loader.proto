@@ -1,0 +1,16 @@
+syntax = "proto3";
+package ru.dmitriyt.dcs.proto;
+option java_outer_classname = "SolverLoaderProto";
+option java_package = "ru.dmitriyt.dcs.proto";
+
+service SolverLoader {
+  rpc GetSolver(GetSolverRequest) returns (stream GetSolverResponse);
+}
+
+message GetSolverRequest {
+  string solver_id = 1;
+}
+
+message GetSolverResponse {
+  bytes data = 1;
+}
