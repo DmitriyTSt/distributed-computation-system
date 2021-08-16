@@ -4,7 +4,10 @@ option java_outer_classname = "SolverLoaderProto";
 option java_package = "ru.dmitriyt.dcs.proto";
 
 service SolverLoader {
+  // Скачать джарник для решения задачи GetSolverRequest.solver_id
   rpc GetSolver(GetSolverRequest) returns (stream GetSolverResponse);
+  // Получить текущий идентификатор задачи, запущенной на сервере
+  rpc GetCurrentSolverId(GetCurrentSolverIdRequest) returns (GetCurrentSolverIdResponse);
 }
 
 message GetSolverRequest {
@@ -13,4 +16,10 @@ message GetSolverRequest {
 
 message GetSolverResponse {
   bytes data = 1;
+}
+
+message GetCurrentSolverIdRequest {}
+
+message GetCurrentSolverIdResponse {
+  string solver_id = 1;
 }

@@ -7,8 +7,10 @@ import ru.dmitriyt.dcs.core.data.TaskResult
 import ru.dmitriyt.dcs.core.presentation.Graph
 import ru.dmitriyt.dcs.server.ArgsManager
 import ru.dmitriyt.dcs.server.data.service.GraphTaskService
+import ru.dmitriyt.dcs.server.data.service.SolverLoaderService
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicIntegerArray
+import kotlin.system.exitProcess
 
 class ServerApp(private val argsManager: ArgsManager) {
     private val ans = AtomicIntegerArray(Graph.MAX_N)
@@ -31,9 +33,14 @@ class ServerApp(private val argsManager: ArgsManager) {
                 onGraphEmpty = { isCompleted = true },
             )
         )
+        .addService(SolverLoaderService(solverId = argsManager.solverId ?: ""))
         .build()
 
     fun start() {
+        if (argsManager.solverId.isNullOrEmpty()) {
+            System.err.println("-j task solver classpath is required")
+            exitProcess(1)
+        }
         server.start()
         println("Server started at port ${argsManager.port}")
         Runtime.getRuntime().addShutdownHook(
@@ -58,12 +65,14 @@ class ServerApp(private val argsManager: ArgsManager) {
             ans.getAndIncrement(it.invariant)
         }
         if (argsManager.isDebug) {
-            println("total = %d, processed = %d, inProgress = %d, isCompleted = %s".format(
-                total.get(),
-                processedGraphs.get(),
-                tasksInProgress,
-                isCompleted.toString(),
-            ))
+            println(
+                "total = %d, processed = %d, inProgress = %d, isCompleted = %s".format(
+                    total.get(),
+                    processedGraphs.get(),
+                    tasksInProgress,
+                    isCompleted.toString(),
+                )
+            )
         }
         if (this.total.get() <= processedGraphs.get() && tasksInProgress == 0 && isCompleted) {
             resultMutex.withLock {
