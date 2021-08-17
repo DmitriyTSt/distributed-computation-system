@@ -6,6 +6,7 @@ class ArgsManager(_args: Array<String>) {
     private val args = _args.toList()
 
     val isDebug = args.contains("-d")
+    val solverId = getParam("-j")
     val port = getParam("--port")?.toIntOrNull() ?: DefaultConfig.DEFAULT_PORT
     val partSize = getParam("-p")?.toIntOrNull() ?: 1000
 
