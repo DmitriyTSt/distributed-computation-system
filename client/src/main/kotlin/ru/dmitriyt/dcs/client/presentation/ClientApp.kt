@@ -5,7 +5,6 @@ import ru.dmitriyt.dcs.client.ArgsManager
 import ru.dmitriyt.dcs.client.data.repository.GraphTaskRepository
 import ru.dmitriyt.dcs.client.data.solver.MultiThreadSolver
 import ru.dmitriyt.dcs.client.data.solver.SingleSolver
-import ru.dmitriyt.dcs.client.data.task.CliqueNumberTask
 import ru.dmitriyt.dcs.client.data.task.GraphTaskLoader
 import java.util.concurrent.atomic.AtomicInteger
 
