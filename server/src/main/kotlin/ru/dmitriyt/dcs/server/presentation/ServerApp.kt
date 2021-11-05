@@ -1,10 +1,12 @@
 package ru.dmitriyt.dcs.server.presentation
 
 import io.grpc.ServerBuilder
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import ru.dmitriyt.dcs.core.data.TaskResult
 import ru.dmitriyt.dcs.core.presentation.Graph
+import ru.dmitriyt.dcs.core.presentation.TimeHelper
 import ru.dmitriyt.dcs.server.ArgsManager
 import ru.dmitriyt.dcs.server.data.service.GraphTaskService
 import ru.dmitriyt.dcs.server.data.service.SolverLoaderService
@@ -80,6 +82,8 @@ class ServerApp(private val argsManager: ArgsManager) {
                     resultHandled = true
                     endTime = System.currentTimeMillis()
                     printResult()
+                    // ожидаем последние запросы клиента, чтобы у него не сыпались ошибки
+                    delay(500)
                     server.shutdown()
                 }
             }

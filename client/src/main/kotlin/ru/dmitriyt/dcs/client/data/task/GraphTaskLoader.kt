@@ -10,6 +10,7 @@ import java.io.File
 class GraphTaskLoader(address: String, port: Int) {
 
     val solverLoaderRepository = SolverLoaderRepository(address, port)
+    private val graphTaskLocalLoader = GraphTaskLocalLoader()
 
     companion object {
         const val GRAPH_TASKS_DIRECTORY = "tasks"
@@ -20,20 +21,16 @@ class GraphTaskLoader(address: String, port: Int) {
      */
     suspend fun loadGraphTask(solverId: String): GraphTask {
         val extLoader = ExtensionLoader<GraphTask>()
-        val graphTaskClass = extLoader.loadClass(
-            directory = "${File.separator}$GRAPH_TASKS_DIRECTORY",
-            classpath = solverId,
-            parentClass = GraphTask::class.java,
-        )
-        if (graphTaskClass == null) {
+        val graphTaskClass = graphTaskLocalLoader.loadGraphTask(solverId)
+        return if (graphTaskClass == null) {
             // не нашли класс
             // идем на сервер
             val jar = solverLoaderRepository.getTaskSolver(solverId)
-            return extLoader.loadClass(jar, solverId, GraphTask::class.java) ?: run {
+            extLoader.loadClass(jar, solverId, GraphTask::class.java) ?: run {
                 throw Exception("Graph task solver incorrect")
             }
         } else {
-            return graphTaskClass
+            graphTaskClass
         }
     }
 }

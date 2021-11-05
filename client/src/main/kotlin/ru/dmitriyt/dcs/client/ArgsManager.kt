@@ -8,6 +8,7 @@ class ArgsManager(_args: Array<String>) {
     val isMulti = args.contains("-m")
     val serverAddress = getParam("--server") ?: DefaultConfig.DEFAULT_SERVER
     val port = getParam("--port")?.toIntOrNull() ?: DefaultConfig.DEFAULT_PORT
+    val solverId = getParam("-j")
 
     private fun getParam(key: String): String? {
         return args.indexOf(key).takeIf { it > -1 }?.let { args.getOrNull(it + 1) }
