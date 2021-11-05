@@ -70,11 +70,11 @@ class GraphTaskService(
                 }
             }
         }
-        try {
-            return GraphTaskProto.SendTaskResultResponse.newBuilder().build()
+        return try {
+            GraphTaskProto.SendTaskResultResponse.newBuilder().build()
         } catch (e: Exception) {
-            e.printStackTrace()
-            return GraphTaskProto.SendTaskResultResponse.newBuilder().build()
+    //            e.printStackTrace()
+            GraphTaskProto.SendTaskResultResponse.newBuilder().build()
         }
     }
 
