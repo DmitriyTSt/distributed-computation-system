@@ -59,10 +59,11 @@ class GraphTaskService(
     override suspend fun sendTaskResult(
         request: GraphTaskProto.SendTaskResultRequest
     ): GraphTaskProto.SendTaskResultResponse {
-        val taskResult = GraphTaskMapper.fromApiToModel(request.taskResult)
+        val taskId = request.taskResult.taskId
         currentTasksMutex.withLock {
-            tasks.find { it.task.id == taskResult.taskId }?.let {
+            tasks.find { it.task.id == taskId }?.let {
                 tasks.remove(it)
+                val taskResult = GraphTaskMapper.fromApiToModel(request.taskResult, it.task.graphsList)
                 endTaskHandler(taskResult, tasks.size)
             } ?: run {
                 if (isDebug) {
@@ -70,12 +71,7 @@ class GraphTaskService(
                 }
             }
         }
-        return try {
-            GraphTaskProto.SendTaskResultResponse.newBuilder().build()
-        } catch (e: Exception) {
-    //            e.printStackTrace()
-            GraphTaskProto.SendTaskResultResponse.newBuilder().build()
-        }
+        return GraphTaskProto.SendTaskResultResponse.newBuilder().build()
     }
 
     private fun buildTaskResponse(task: Task): GraphTaskProto.GetTaskResponse {
