@@ -13,17 +13,10 @@ object GraphTaskMapper {
             .build()
     }
 
-    fun fromApiToModel(taskResult: GraphTaskProto.TaskResult): TaskResult {
+    fun fromApiToModel(taskResult: GraphTaskProto.TaskResult, graphs: List<String>): TaskResult {
         return TaskResult(
             taskId = taskResult.taskId,
-            results = taskResult.resultsList.map { fromApiToModel(it) }
-        )
-    }
-
-    private fun fromApiToModel(graphResult: GraphTaskProto.GraphResult): GraphResult {
-        return GraphResult(
-            graph6 = graphResult.graph,
-            invariant = graphResult.invariant,
+            results = taskResult.resultsList.mapIndexed { index, result -> GraphResult(graphs[index], result) }
         )
     }
 }
