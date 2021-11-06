@@ -13,12 +13,12 @@ class GraphTaskRepository(server: String, port: Int) : Closeable {
     private val stub = GraphTaskGrpc.newBlockingStub(channel)
 
     fun getTask(): Task {
-        try {
-            return stub.getTask(
+        return try {
+            stub.getTask(
                 GraphTaskProto.GetTaskRequest.newBuilder().build()
             ).task.let { GraphTaskMapper.fromApiToModel(it) }
         } catch (e: Exception) {
-            return Task.EMPTY
+            Task.EMPTY
         }
     }
 
