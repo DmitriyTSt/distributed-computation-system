@@ -1,12 +1,13 @@
 package ru.dmitriyt.dcs.client.presentation
 
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.sync.Mutex
 import ru.dmitriyt.dcs.client.ArgsManager
 import ru.dmitriyt.dcs.client.data.solver.MultiThreadSolver
 import ru.dmitriyt.dcs.client.data.solver.SingleSolver
 import ru.dmitriyt.dcs.client.data.task.GraphTaskLoader
+import ru.dmitriyt.dcs.client.data.LocalResultSaver
 import ru.dmitriyt.dcs.core.data.Task
+import ru.dmitriyt.dcs.core.data.TaskResult
 import ru.dmitriyt.dcs.core.presentation.Graph
 import ru.dmitriyt.dcs.core.presentation.TimeHelper
 import java.util.concurrent.atomic.AtomicBoolean
@@ -19,6 +20,7 @@ class ClientStandaloneApp(private val argsManager: ArgsManager) {
         private const val PART_SIZE = 1000
     }
 
+    private val taskResults = mutableListOf<TaskResult>()
     private val taskId = AtomicInteger(0)
     private val processedGraphs = AtomicInteger(0)
     private val graphTaskLoader = GraphTaskLoader(argsManager.serverAddress, argsManager.port)
@@ -28,6 +30,7 @@ class ClientStandaloneApp(private val argsManager: ArgsManager) {
     private var endTime = 0L
     private var isCompleted = AtomicBoolean(false)
     private var isFinished = AtomicBoolean(false)
+    private val lock = Object()
 
     fun start(currentSolverId: String) = runBlocking {
         println("Client onStart")
@@ -60,11 +63,26 @@ class ClientStandaloneApp(private val argsManager: ArgsManager) {
             taskResult.results.forEach {
                 ans.getAndIncrement(it.invariant)
             }
+
+            if (argsManager.needSaving) {
+                synchronized(lock) {
+                    taskResults.add(taskResult)
+                }
+            }
         }, onFinish = {
             if (total.get() == processedGraphs.get() && isCompleted.get() && !isFinished.get()) {
                 isFinished.set(true)
                 endTime = System.currentTimeMillis()
                 printResult()
+                if (argsManager.needSaving) {
+                    val localResultSaver = LocalResultSaver(currentSolverId, total.get())
+                    println("Saving results")
+                    val results = synchronized(lock) {
+                        taskResults.flatMap { it.results }
+                    }
+                    localResultSaver.saveResult(results)
+                    println("Results saved")
+                }
             }
         })
 

@@ -8,6 +8,7 @@ import ru.dmitriyt.dcs.core.data.TaskResult
 import ru.dmitriyt.dcs.core.presentation.Graph
 import ru.dmitriyt.dcs.core.presentation.TimeHelper
 import ru.dmitriyt.dcs.server.ArgsManager
+import ru.dmitriyt.dcs.server.data.ResultSaver
 import ru.dmitriyt.dcs.server.data.service.GraphTaskService
 import ru.dmitriyt.dcs.server.data.service.SolverLoaderService
 import java.util.concurrent.atomic.AtomicInteger
@@ -21,8 +22,10 @@ class ServerApp(private val argsManager: ArgsManager) {
     private var endTime = 0L
     private var processedGraphs = AtomicInteger(0)
     private var resultHandled = false
-    private val resultMutex = Mutex()
+    private val finishMutex = Mutex()
     private var isCompleted = false
+    private val taskResults = mutableListOf<TaskResult>()
+    private val resultMutex = Mutex()
 
     private val server = ServerBuilder
         .forPort(argsManager.port)
@@ -35,7 +38,7 @@ class ServerApp(private val argsManager: ArgsManager) {
                 onGraphEmpty = { isCompleted = true },
             )
         )
-        .addService(SolverLoaderService(solverId = argsManager.solverId ?: ""))
+        .addService(SolverLoaderService(solverId = argsManager.solverId.orEmpty()))
         .build()
 
     fun start() {
@@ -66,6 +69,13 @@ class ServerApp(private val argsManager: ArgsManager) {
         taskResult.results.forEach {
             ans.getAndIncrement(it.invariant)
         }
+
+        if (argsManager.needSaving) {
+            resultMutex.withLock {
+                taskResults.add(taskResult)
+            }
+        }
+
         if (argsManager.isDebug) {
             println(
                 "total = %d, processed = %d, inProgress = %d, isCompleted = %s".format(
@@ -77,11 +87,17 @@ class ServerApp(private val argsManager: ArgsManager) {
             )
         }
         if (this.total.get() <= processedGraphs.get() && tasksInProgress == 0 && isCompleted) {
-            resultMutex.withLock {
+            finishMutex.withLock {
                 if (!resultHandled) {
                     resultHandled = true
                     endTime = System.currentTimeMillis()
                     printResult()
+                    if (argsManager.needSaving) {
+                        val localResultSaver = ResultSaver(argsManager.solverId.orEmpty(), total.get())
+                        println("Saving results")
+                        localResultSaver.saveResult(taskResults.flatMap { it.results })
+                        println("Results saved")
+                    }
                     // ожидаем последние запросы клиента, чтобы у него не сыпались ошибки
                     delay(500)
                     server.shutdown()
