@@ -1,12 +1,11 @@
 package ru.dmitriyt.dcs.client.presentation
 
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.sync.Mutex
 import ru.dmitriyt.dcs.client.ArgsManager
 import ru.dmitriyt.dcs.client.data.solver.MultiThreadSolver
 import ru.dmitriyt.dcs.client.data.solver.SingleSolver
 import ru.dmitriyt.dcs.client.data.task.GraphTaskLoader
-import ru.dmitriyt.dcs.client.domain.LocalResultSaver
+import ru.dmitriyt.dcs.client.data.LocalResultSaver
 import ru.dmitriyt.dcs.core.data.Task
 import ru.dmitriyt.dcs.core.data.TaskResult
 import ru.dmitriyt.dcs.core.presentation.Graph
@@ -14,8 +13,6 @@ import ru.dmitriyt.dcs.core.presentation.TimeHelper
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicIntegerArray
-import java.util.concurrent.atomic.AtomicReference
-import java.util.function.BinaryOperator
 
 class ClientStandaloneApp(private val argsManager: ArgsManager) {
 
@@ -62,14 +59,15 @@ class ClientStandaloneApp(private val argsManager: ArgsManager) {
             )
         }, resultHandler = { taskResult ->
             processedGraphs.getAndAdd(taskResult.results.size)
+
+            taskResult.results.forEach {
+                ans.getAndIncrement(it.invariant)
+            }
+
             if (argsManager.needSaving) {
                 synchronized(lock) {
                     taskResults.add(taskResult)
                 }
-            }
-
-            taskResult.results.forEach {
-                ans.getAndIncrement(it.invariant)
             }
         }, onFinish = {
             if (total.get() == processedGraphs.get() && isCompleted.get() && !isFinished.get()) {

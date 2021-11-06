@@ -1,4 +1,4 @@
-package ru.dmitriyt.dcs.client.domain
+package ru.dmitriyt.dcs.client.data
 
 import ru.dmitriyt.dcs.core.data.GraphResult
 import java.io.File
