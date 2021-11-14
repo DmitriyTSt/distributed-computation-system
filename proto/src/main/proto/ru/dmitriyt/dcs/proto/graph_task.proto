@@ -27,7 +27,19 @@ message SendTaskResultRequest {
 
 message TaskResult {
   int32 taskId = 1;
-  repeated int32 results = 2;
+  int32 processedGraphs = 2;
+  oneof result {
+    TaskInvariantResult resultInvariant = 3;
+    TaskConditionResult resultCondition = 4;
+  }
+}
+
+message TaskInvariantResult {
+  repeated int32 results = 1;
+}
+
+message TaskConditionResult {
+  repeated string graphs = 1;
 }
 
 message SendTaskResultResponse {}

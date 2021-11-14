@@ -9,14 +9,28 @@ object GraphTaskMapper {
     fun fromApiToModel(task: GraphTaskProto.Task): Task {
         return Task(
             id = task.id,
-            graphs = task.graphsList
+            graphs = task.graphsList,
         )
     }
 
     fun fromModelToApi(result: TaskResult): GraphTaskProto.TaskResult {
         return GraphTaskProto.TaskResult.newBuilder()
             .setTaskId(result.taskId)
-            .addAllResults(result.results.map { it.invariant })
+            .setProcessedGraphs(result.processedGraphs)
+            .apply {
+                when (result) {
+                    is TaskResult.Graphs -> {
+                        resultCondition = GraphTaskProto.TaskConditionResult.newBuilder()
+                            .addAllGraphs(result.graphs)
+                            .build()
+                    }
+                    is TaskResult.Invariant -> {
+                        resultInvariant = GraphTaskProto.TaskInvariantResult.newBuilder()
+                            .addAllResults(result.results.map { it.invariant })
+                            .build()
+                    }
+                }
+            }
             .build()
     }
 }

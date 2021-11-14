@@ -40,7 +40,6 @@ class ExtensionLoader<C> {
         } catch (e: ClassNotFoundException) {
             null
         } catch (e: Exception) {
-            e.printStackTrace()
             null
         }
     }

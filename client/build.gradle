@@ -7,7 +7,7 @@ plugins {
 }
 
 group 'ru.dmitriyt.dcs.client'
-version '1.0'
+version '1.1'
 
 repositories {
     mavenCentral()
@@ -47,7 +47,7 @@ packageExecutableDistribution.dependsOn createExe
 packageExecutableDistribution.dependsOn addJreToDistributable
 
 dependencies {
-    implementation 'com.github.DmitriyTSt:dcs-core:1.0'
+    implementation "com.github.DmitriyTSt:dcs-core:${rootProject.ext.coreVersion}"
     implementation project(":core")
     implementation project(":proto")
 
