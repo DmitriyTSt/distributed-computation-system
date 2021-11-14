@@ -5,7 +5,7 @@ import ru.dmitriyt.dcs.client.ArgsManager
 import ru.dmitriyt.dcs.client.data.repository.GraphTaskRepository
 import ru.dmitriyt.dcs.client.data.solver.MultiThreadSolver
 import ru.dmitriyt.dcs.client.data.solver.SingleSolver
-import ru.dmitriyt.dcs.client.data.task.GraphTaskLoader
+import ru.dmitriyt.dcs.client.data.repository.SolverRepository
 import java.util.concurrent.atomic.AtomicInteger
 
 class ClientApp(private val argsManager: ArgsManager) {
@@ -13,13 +13,12 @@ class ClientApp(private val argsManager: ArgsManager) {
         GraphTaskRepository(argsManager.serverAddress, argsManager.port)
     }
     private val completedTaskCount = AtomicInteger(0)
-    private val graphTaskLoader = GraphTaskLoader(argsManager.serverAddress, argsManager.port)
+    private val solverRepository = SolverRepository(argsManager.serverAddress, argsManager.port)
 
     fun start() = runBlocking {
         println("Client onStart")
         println("Connecting to ${argsManager.serverAddress}:${argsManager.port}")
-        val currentSolverId = graphTaskLoader.solverLoaderRepository.getCurrentSolverId()
-        val graphTask = graphTaskLoader.loadGraphTask(currentSolverId)
+        val graphTask = solverRepository.loadGraphTask()
         val solver = if (argsManager.isMulti) {
             MultiThreadSolver(graphTask)
         } else {

@@ -4,7 +4,9 @@ import io.grpc.ServerBuilder
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import ru.dmitriyt.dcs.core.GraphTask
 import ru.dmitriyt.dcs.core.data.TaskResult
+import ru.dmitriyt.dcs.core.data.classloader.SolverClassLoader
 import ru.dmitriyt.dcs.core.presentation.Graph
 import ru.dmitriyt.dcs.core.presentation.TimeHelper
 import ru.dmitriyt.dcs.server.ArgsManager
@@ -26,6 +28,8 @@ class ServerApp(private val argsManager: ArgsManager) {
     private var isCompleted = false
     private val taskResults = mutableListOf<TaskResult>()
     private val resultMutex = Mutex()
+
+    private val solverClassLoader = SolverClassLoader()
 
     private val server = ServerBuilder
         .forPort(argsManager.port)
@@ -53,6 +57,16 @@ class ServerApp(private val argsManager: ArgsManager) {
                 server.shutdown()
             }
         )
+
+        // проверка корректности файла инварианта
+        val solver = solverClassLoader.load<GraphTask>(argsManager.solverId)
+        if (solver == null) {
+            System.err.println(
+                "jar with ${argsManager.solverId} classpath not found in ${SolverClassLoader.GRAPH_TASKS_DIRECTORY} directory"
+            )
+            exitProcess(1)
+        }
+
         server.awaitTermination()
     }
 
@@ -99,7 +113,7 @@ class ServerApp(private val argsManager: ArgsManager) {
                         println("Results saved")
                     }
                     // ожидаем последние запросы клиента, чтобы у него не сыпались ошибки
-                    delay(500)
+                    delay(2000)
                     server.shutdown()
                 }
             }
