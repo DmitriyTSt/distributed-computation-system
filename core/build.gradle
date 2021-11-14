@@ -9,3 +9,7 @@ version '1.0'
 repositories {
     mavenCentral()
 }
+
+dependencies {
+    implementation 'com.github.DmitriyTSt:dcs-core:1.0'
+}

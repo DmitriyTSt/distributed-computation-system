@@ -1,6 +1,7 @@
-package ru.dmitriyt.dcs.client.data.task
+package ru.dmitriyt.dcs.core.data.classloader
 
 import java.io.File
+import java.lang.ClassLoader
 import java.lang.reflect.Constructor
 import java.net.URLClassLoader
 
@@ -26,7 +27,7 @@ class ExtensionLoader<C> {
         return null
     }
 
-    fun loadClass(file: File, classpath: String, parentClass: Class<C>): C? {
+    private fun loadClass(file: File, classpath: String, parentClass: Class<C>): C? {
         return try {
             val loader: ClassLoader = URLClassLoader.newInstance(
                 arrayOf(file.toURL()),

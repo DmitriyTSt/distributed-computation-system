@@ -4,8 +4,8 @@ import kotlinx.coroutines.runBlocking
 import ru.dmitriyt.dcs.client.ArgsManager
 import ru.dmitriyt.dcs.client.data.solver.MultiThreadSolver
 import ru.dmitriyt.dcs.client.data.solver.SingleSolver
-import ru.dmitriyt.dcs.client.data.task.GraphTaskLoader
 import ru.dmitriyt.dcs.client.data.LocalResultSaver
+import ru.dmitriyt.dcs.client.data.repository.SolverRepository
 import ru.dmitriyt.dcs.core.data.Task
 import ru.dmitriyt.dcs.core.data.TaskResult
 import ru.dmitriyt.dcs.core.presentation.Graph
@@ -23,7 +23,7 @@ class ClientStandaloneApp(private val argsManager: ArgsManager) {
     private val taskResults = mutableListOf<TaskResult>()
     private val taskId = AtomicInteger(0)
     private val processedGraphs = AtomicInteger(0)
-    private val graphTaskLoader = GraphTaskLoader(argsManager.serverAddress, argsManager.port)
+    private val solverRepository = SolverRepository(argsManager.serverAddress, argsManager.port)
     private val ans = AtomicIntegerArray(Graph.MAX_N)
     private var total = AtomicInteger(0)
     private var startTime = 0L
@@ -34,7 +34,7 @@ class ClientStandaloneApp(private val argsManager: ArgsManager) {
 
     fun start(currentSolverId: String) = runBlocking {
         println("Client onStart")
-        val graphTask = graphTaskLoader.loadGraphTask(currentSolverId)
+        val graphTask = solverRepository.loadGraphTask(currentSolverId)
         val solver = if (argsManager.isMulti) {
             MultiThreadSolver(graphTask)
         } else {
