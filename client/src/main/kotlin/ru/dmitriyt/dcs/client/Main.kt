@@ -1,8 +1,13 @@
 package ru.dmitriyt.dcs.client
 
 import ru.dmitriyt.dcs.client.presentation.ClientApp
+import ru.dmitriyt.dcs.client.presentation.ClientStandaloneApp
 
 fun main(args: Array<String>) {
     val argsManager = ArgsManager(args)
-    ClientApp(argsManager).start()
+    argsManager.solverId?.let { solverId ->
+        ClientStandaloneApp(argsManager).start(solverId)
+    } ?: run {
+        ClientApp(argsManager).start()
+    }
 }

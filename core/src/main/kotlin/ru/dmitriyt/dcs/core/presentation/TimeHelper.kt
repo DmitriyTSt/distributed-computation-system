@@ -1,4 +1,4 @@
-package ru.dmitriyt.dcs.server.presentation
+package ru.dmitriyt.dcs.core.presentation
 
 object TimeHelper {
     fun getFormattedSpentTime(startTime: Long, endTime: Long): String {

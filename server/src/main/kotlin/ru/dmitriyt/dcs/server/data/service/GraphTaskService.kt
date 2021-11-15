@@ -1,5 +1,7 @@
 package ru.dmitriyt.dcs.server.data.service
 
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import ru.dmitriyt.dcs.core.data.Task
 import ru.dmitriyt.dcs.core.data.TaskResult
 import ru.dmitriyt.dcs.proto.GraphTaskGrpcKt
@@ -9,6 +11,7 @@ import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
 
 class GraphTaskService(
+    private val isDebug: Boolean,
     private val partSize: Int = 1000,
     private val startTaskHandler: (Int) -> Unit,
     private val endTaskHandler: suspend (result: TaskResult, taskInProgress: Int) -> Unit,
@@ -16,6 +19,7 @@ class GraphTaskService(
 ) : GraphTaskGrpcKt.GraphTaskCoroutineImplBase() {
     private val taskId = AtomicInteger(0)
     private val tasks = LinkedList<GraphTaskProto.GetTaskResponse>()
+    private val currentTasksMutex = Mutex()
 
     override suspend fun getTask(
         request: GraphTaskProto.GetTaskRequest
@@ -26,31 +30,46 @@ class GraphTaskService(
                 return@repeat
             }
         }
-        return if (graphs.isEmpty()) {
-            tasks.firstOrNull() ?: run {
-                onGraphEmpty()
-                buildTaskResponse(Task.EMPTY)
+        try {
+            return if (graphs.isEmpty()) {
+                currentTasksMutex.withLock {
+                    tasks.firstOrNull() ?: run {
+                        onGraphEmpty()
+                        buildTaskResponse(Task.EMPTY)
+                    }
+                }
+            } else {
+                if (graphs.size != partSize) {
+                    onGraphEmpty()
+                }
+                startTaskHandler(graphs.size)
+                val localTaskId = taskId.getAndIncrement()
+                val response = buildTaskResponse(Task(localTaskId, graphs))
+                currentTasksMutex.withLock {
+                    tasks.add(response)
+                }
+                response
             }
-        } else {
-            if (graphs.size != partSize) {
-                onGraphEmpty()
-            }
-            startTaskHandler(graphs.size)
-            val localTaskId = taskId.getAndIncrement()
-            val response = buildTaskResponse(Task(localTaskId, graphs))
-            tasks.add(response)
-            response
+        } catch (e: Exception) {
+            e.printStackTrace()
+            return buildTaskResponse(Task.EMPTY)
         }
     }
 
     override suspend fun sendTaskResult(
         request: GraphTaskProto.SendTaskResultRequest
     ): GraphTaskProto.SendTaskResultResponse {
-        val taskResult = GraphTaskMapper.fromApiToModel(request.taskResult)
-        tasks.find { it.task.id == taskResult.taskId }?.let {
-            tasks.remove(it)
-//            println("receive task $taskId with total = ${request.total}")
-            endTaskHandler(taskResult, tasks.size)
+        val taskId = request.taskResult.taskId
+        currentTasksMutex.withLock {
+            tasks.find { it.task.id == taskId }?.let {
+                tasks.remove(it)
+                val taskResult = GraphTaskMapper.fromApiToModel(request.taskResult, it.task.graphsList)
+                endTaskHandler(taskResult, tasks.size)
+            } ?: run {
+                if (isDebug) {
+                    println("task processed yet")
+                }
+            }
         }
         return GraphTaskProto.SendTaskResultResponse.newBuilder().build()
     }

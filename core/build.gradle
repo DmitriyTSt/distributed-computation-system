@@ -4,8 +4,12 @@ plugins {
 }
 
 group 'ru.dmitriyt.dcs.core'
-version '1.0'
+version '1.1'
 
 repositories {
     mavenCentral()
+}
+
+dependencies {
+    implementation "com.github.DmitriyTSt:dcs-core:${rootProject.ext.coreVersion}"
 }

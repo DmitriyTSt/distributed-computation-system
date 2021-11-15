@@ -5,7 +5,7 @@ plugins {
 }
 
 group 'ru.dmitriyt.dcs.server'
-version '1.0'
+version '1.1'
 
 repositories {
     mavenCentral()
@@ -17,11 +17,12 @@ jar {
                 'Implementation-Version': project.version,
                 'Main-Class': 'ru.dmitriyt.dcs.server.MainKt'
     }
-    archiveBaseName.set("dcs-${project.name}")
+    archiveFileName.set("dcs-${project.name}.jar")
     from { configurations.compileClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
 }
 
 dependencies {
+    implementation "com.github.DmitriyTSt:dcs-core:${rootProject.ext.coreVersion}"
     implementation project(":core")
     implementation project(":proto")
 
