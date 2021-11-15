@@ -19,6 +19,7 @@ import java.util.concurrent.atomic.AtomicIntegerArray
 import kotlin.system.exitProcess
 
 class ServerApp(private val argsManager: ArgsManager) {
+    private var isInvariantSolver = false
     private val ansInvariant = AtomicIntegerArray(Graph.MAX_N)
     private val ansCondition = AtomicInteger(0)
     private var total = AtomicInteger(0)
@@ -61,8 +62,10 @@ class ServerApp(private val argsManager: ArgsManager) {
         )
 
         // проверка корректности поданной задачи (инвариант или проверка на условие)
-        val solver = solverClassLoader.load<GraphInvariant>(argsManager.solverId)
-            ?: solverClassLoader.load<GraphCondition>(argsManager.solverId)
+        val invariantSolver = solverClassLoader.load<GraphInvariant>(argsManager.solverId)
+        val conditionSolver = solverClassLoader.load<GraphCondition>(argsManager.solverId)
+        isInvariantSolver = invariantSolver != null
+        val solver = invariantSolver ?: conditionSolver
         if (solver == null) {
             System.err.println(
                 "jar with ${argsManager.solverId} classpath not found in ${SolverClassLoader.GRAPH_TASKS_DIRECTORY} directory"
@@ -144,12 +147,16 @@ class ServerApp(private val argsManager: ArgsManager) {
 
     private fun printResult() {
         println("Total: ${total.get()}")
-        val simpleAns = mutableListOf<Int>()
-        repeat(Graph.MAX_N) {
-            simpleAns.add(ansInvariant.get(it))
-        }
-        simpleAns.forEachIndexed { index, count ->
-            println("$index: $count")
+        if (isInvariantSolver) {
+            val simpleAns = mutableListOf<Int>()
+            repeat(Graph.MAX_N) {
+                simpleAns.add(ansInvariant.get(it))
+            }
+            simpleAns.forEachIndexed { index, count ->
+                println("$index: $count")
+            }
+        } else {
+            println("Found ${ansCondition.get()} graphs")
         }
         println(TimeHelper.getFormattedSpentTime(startTime, endTime))
     }
