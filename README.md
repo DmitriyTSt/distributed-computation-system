@@ -1,6 +1,6 @@
 # DCS (Distributed computation system)
-![GitHub release (latest by date)](https://img.shields.io/github/v/release/DmitriyTSt/distributed-computation-system?color=green&display_name=tag)
-![GitHub release (latest by date)](https://img.shields.io/github/v/release/DmitriyTSt/dcs-core?display_name=tag&label=dcs-core)
+[![GitHub release (latest by date)](https://img.shields.io/github/v/release/DmitriyTSt/distributed-computation-system?color=green&display_name=tag)](https://github.com/DmitriyTSt/distributed-computation-system/releases/latest)
+[![GitHub release (latest by date)](https://img.shields.io/github/v/release/DmitriyTSt/dcs-core?display_name=tag&label=dcs-core)](https://github.com/DmitriyTSt/dcs-core/releases/latest)
 ## Распределенная система вычисления инвариантов графов
 
 ## Архитектура
