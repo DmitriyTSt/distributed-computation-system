@@ -14,9 +14,23 @@ object GraphTaskMapper {
     }
 
     fun fromApiToModel(taskResult: GraphTaskProto.TaskResult, graphs: List<String>): TaskResult {
-        return TaskResult(
-            taskId = taskResult.taskId,
-            results = taskResult.resultsList.mapIndexed { index, result -> GraphResult(graphs[index], result) }
-        )
+        return if (taskResult.hasResultCondition()) {
+            TaskResult.Graphs(
+                taskId = taskResult.taskId,
+                processedGraphs = taskResult.processedGraphs,
+                graphs = taskResult.resultCondition.graphsList,
+            )
+        } else {
+            TaskResult.Invariant(
+                taskId = taskResult.taskId,
+                processedGraphs = taskResult.processedGraphs,
+                results = taskResult.resultInvariant.resultsList.mapIndexed { index, result ->
+                    GraphResult(
+                        graphs[index],
+                        result
+                    )
+                }
+            )
+        }
     }
 }

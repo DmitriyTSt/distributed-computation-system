@@ -4,7 +4,8 @@ import io.grpc.ServerBuilder
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import ru.dmitriyt.dcs.core.GraphTask
+import ru.dmitriyt.dcs.core.GraphCondition
+import ru.dmitriyt.dcs.core.GraphInvariant
 import ru.dmitriyt.dcs.core.data.TaskResult
 import ru.dmitriyt.dcs.core.data.classloader.SolverClassLoader
 import ru.dmitriyt.dcs.core.presentation.Graph
@@ -18,7 +19,9 @@ import java.util.concurrent.atomic.AtomicIntegerArray
 import kotlin.system.exitProcess
 
 class ServerApp(private val argsManager: ArgsManager) {
-    private val ans = AtomicIntegerArray(Graph.MAX_N)
+    private var isInvariantSolver = false
+    private val ansInvariant = AtomicIntegerArray(Graph.MAX_N)
+    private val ansCondition = AtomicInteger(0)
     private var total = AtomicInteger(0)
     private var startTime = 0L
     private var endTime = 0L
@@ -58,8 +61,11 @@ class ServerApp(private val argsManager: ArgsManager) {
             }
         )
 
-        // проверка корректности файла инварианта
-        val solver = solverClassLoader.load<GraphTask>(argsManager.solverId)
+        // проверка корректности поданной задачи (инвариант или проверка на условие)
+        val invariantSolver = solverClassLoader.load<GraphInvariant>(argsManager.solverId)
+        val conditionSolver = solverClassLoader.load<GraphCondition>(argsManager.solverId)
+        isInvariantSolver = invariantSolver != null
+        val solver = invariantSolver ?: conditionSolver
         if (solver == null) {
             System.err.println(
                 "jar with ${argsManager.solverId} classpath not found in ${SolverClassLoader.GRAPH_TASKS_DIRECTORY} directory"
@@ -78,10 +84,17 @@ class ServerApp(private val argsManager: ArgsManager) {
     }
 
     private suspend fun handleResult(taskResult: TaskResult, tasksInProgress: Int) {
-        processedGraphs.getAndAdd(taskResult.results.size)
+        processedGraphs.getAndAdd(taskResult.processedGraphs)
 
-        taskResult.results.forEach {
-            ans.getAndIncrement(it.invariant)
+        when (taskResult) {
+            is TaskResult.Graphs -> {
+                ansCondition.getAndAdd(taskResult.graphs.size)
+            }
+            is TaskResult.Invariant -> {
+                taskResult.results.forEach {
+                    ansInvariant.getAndIncrement(it.invariant)
+                }
+            }
         }
 
         if (argsManager.needSaving) {
@@ -109,7 +122,19 @@ class ServerApp(private val argsManager: ArgsManager) {
                     if (argsManager.needSaving) {
                         val localResultSaver = ResultSaver(argsManager.solverId.orEmpty(), total.get())
                         println("Saving results")
-                        localResultSaver.saveResult(taskResults.flatMap { it.results })
+                        when (taskResults.firstOrNull()) {
+                            is TaskResult.Graphs -> {
+                                localResultSaver.saveConditionResult(
+                                    taskResults.flatMap { (it as TaskResult.Graphs).graphs }
+                                )
+                            }
+                            is TaskResult.Invariant -> {
+                                localResultSaver.saveInvariantResult(
+                                    taskResults.flatMap { (it as TaskResult.Invariant).results }
+                                )
+                            }
+                            else -> Unit
+                        }
                         println("Results saved")
                     }
                     // ожидаем последние запросы клиента, чтобы у него не сыпались ошибки
@@ -122,12 +147,16 @@ class ServerApp(private val argsManager: ArgsManager) {
 
     private fun printResult() {
         println("Total: ${total.get()}")
-        val simpleAns = mutableListOf<Int>()
-        repeat(Graph.MAX_N) {
-            simpleAns.add(ans.get(it))
-        }
-        simpleAns.forEachIndexed { index, count ->
-            println("$index: $count")
+        if (isInvariantSolver) {
+            val simpleAns = mutableListOf<Int>()
+            repeat(Graph.MAX_N) {
+                simpleAns.add(ansInvariant.get(it))
+            }
+            simpleAns.forEachIndexed { index, count ->
+                println("$index: $count")
+            }
+        } else {
+            println("Found ${ansCondition.get()} graphs")
         }
         println(TimeHelper.getFormattedSpentTime(startTime, endTime))
     }

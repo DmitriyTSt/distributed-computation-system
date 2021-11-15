@@ -4,7 +4,9 @@ import io.grpc.ManagedChannelBuilder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.withContext
-import ru.dmitriyt.dcs.core.GraphTask
+import ru.dmitriyt.dcs.client.domain.GraphTaskInfo
+import ru.dmitriyt.dcs.core.GraphCondition
+import ru.dmitriyt.dcs.core.GraphInvariant
 import ru.dmitriyt.dcs.core.data.classloader.SolverClassLoader
 import ru.dmitriyt.dcs.proto.SolverLoaderGrpcKt
 import ru.dmitriyt.dcs.proto.SolverLoaderProto
@@ -17,32 +19,48 @@ class SolverRepository(address: String, port: Int) : Closeable {
     private val stub = SolverLoaderGrpcKt.SolverLoaderCoroutineStub(channel)
 
     /** Загрузчик локальных классов */
-    private val solverClassLoader = SolverClassLoader()
+    val solverClassLoader = SolverClassLoader()
 
     /**
-     * Загрузка текущего класса решения локально или с сервера
-     * @param _solverId - classpath решения, если запускаем локально
+     * Загружает локальный класс задачи
      */
-    suspend fun loadGraphTask(_solverId: String? = null): GraphTask {
-        val solverId = _solverId ?: getCurrentSolverId()
-        val graphTaskClass = solverClassLoader.load<GraphTask>(solverId)
-        return if (graphTaskClass == null) {
-            if (_solverId != null) {
+    fun loadStandalone(solverId: String): GraphTaskInfo {
+        val graphInvariant = solverClassLoader.load<GraphInvariant>(solverId)
+        val graphCondition = solverClassLoader.load<GraphCondition>(solverId)
+        return when {
+            graphInvariant != null -> GraphTaskInfo.Invariant(graphInvariant)
+            graphCondition != null -> GraphTaskInfo.Condition(graphCondition)
+            else -> {
                 System.err.println("Local graph task not found")
-            }
-            // не нашли класс
-            // идем на сервер
-            try {
-                getTaskSolver(solverId)
-            } catch (e: Exception) {
-                System.err.println("Load graph task from server error")
                 exitProcess(1)
             }
-            solverClassLoader.load<GraphTask>(solverId) ?: run {
-                throw Exception("Graph task solver incorrect")
+        }
+    }
+
+    /**
+     * Загружает класс локально, или, если не найден, скачивает с сервера
+     */
+    suspend fun load(): GraphTaskInfo {
+        val solverId = getCurrentSolverId()
+        val graphInvariant = solverClassLoader.load<GraphInvariant>(solverId)
+        val graphCondition = solverClassLoader.load<GraphCondition>(solverId)
+        return when {
+            graphInvariant != null -> GraphTaskInfo.Invariant(graphInvariant)
+            graphCondition != null -> GraphTaskInfo.Condition(graphCondition)
+            else -> {
+                // если нет локально, пробуем загрузить с сервера
+                getTaskSolver(solverId)
+                val graphInvariantAfterLoad = solverClassLoader.load<GraphInvariant>(solverId)
+                val graphConditionAfterLoad = solverClassLoader.load<GraphCondition>(solverId)
+                when {
+                    graphInvariantAfterLoad != null -> GraphTaskInfo.Invariant(graphInvariantAfterLoad)
+                    graphConditionAfterLoad != null -> GraphTaskInfo.Condition(graphConditionAfterLoad)
+                    else -> {
+                        System.err.println("Error graph task load")
+                        exitProcess(1)
+                    }
+                }
             }
-        } else {
-            graphTaskClass
         }
     }
 

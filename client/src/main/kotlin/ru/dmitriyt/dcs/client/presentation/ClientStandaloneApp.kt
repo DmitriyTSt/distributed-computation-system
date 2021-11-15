@@ -6,6 +6,7 @@ import ru.dmitriyt.dcs.client.data.solver.MultiThreadSolver
 import ru.dmitriyt.dcs.client.data.solver.SingleSolver
 import ru.dmitriyt.dcs.client.data.LocalResultSaver
 import ru.dmitriyt.dcs.client.data.repository.SolverRepository
+import ru.dmitriyt.dcs.client.domain.GraphTaskInfo
 import ru.dmitriyt.dcs.core.data.Task
 import ru.dmitriyt.dcs.core.data.TaskResult
 import ru.dmitriyt.dcs.core.presentation.Graph
@@ -20,11 +21,13 @@ class ClientStandaloneApp(private val argsManager: ArgsManager) {
         private const val PART_SIZE = 1000
     }
 
+    private lateinit var graphTaskInfo: GraphTaskInfo
     private val taskResults = mutableListOf<TaskResult>()
     private val taskId = AtomicInteger(0)
     private val processedGraphs = AtomicInteger(0)
     private val solverRepository = SolverRepository(argsManager.serverAddress, argsManager.port)
-    private val ans = AtomicIntegerArray(Graph.MAX_N)
+    private val ansInvariant = AtomicIntegerArray(Graph.MAX_N)
+    private val ansCondition = AtomicInteger(0)
     private var total = AtomicInteger(0)
     private var startTime = 0L
     private var endTime = 0L
@@ -34,11 +37,11 @@ class ClientStandaloneApp(private val argsManager: ArgsManager) {
 
     fun start(currentSolverId: String) = runBlocking {
         println("Client onStart")
-        val graphTask = solverRepository.loadGraphTask(currentSolverId)
+        graphTaskInfo = solverRepository.loadStandalone(currentSolverId)
         val solver = if (argsManager.isMulti) {
-            MultiThreadSolver(graphTask)
+            MultiThreadSolver(graphTaskInfo)
         } else {
-            SingleSolver(graphTask)
+            SingleSolver(graphTaskInfo)
         }
         startTime = System.currentTimeMillis()
         solver.run(inputProvider = {
@@ -58,10 +61,16 @@ class ClientStandaloneApp(private val argsManager: ArgsManager) {
                 graphs = graphs,
             )
         }, resultHandler = { taskResult ->
-            processedGraphs.getAndAdd(taskResult.results.size)
-
-            taskResult.results.forEach {
-                ans.getAndIncrement(it.invariant)
+            processedGraphs.getAndAdd(taskResult.processedGraphs)
+            when (taskResult) {
+                is TaskResult.Graphs -> {
+                    ansCondition.getAndAdd(taskResult.graphs.size)
+                }
+                is TaskResult.Invariant -> {
+                    taskResult.results.forEach {
+                        ansInvariant.getAndIncrement(it.invariant)
+                    }
+                }
             }
 
             if (argsManager.needSaving) {
@@ -77,10 +86,20 @@ class ClientStandaloneApp(private val argsManager: ArgsManager) {
                 if (argsManager.needSaving) {
                     val localResultSaver = LocalResultSaver(currentSolverId, total.get())
                     println("Saving results")
-                    val results = synchronized(lock) {
-                        taskResults.flatMap { it.results }
+                    when (graphTaskInfo) {
+                        is GraphTaskInfo.Condition -> {
+                            val results = synchronized(lock) {
+                                taskResults.flatMap { (it as TaskResult.Graphs).graphs }
+                            }
+                            localResultSaver.saveConditionResult(results)
+                        }
+                        is GraphTaskInfo.Invariant -> {
+                            val results = synchronized(lock) {
+                                taskResults.flatMap { (it as TaskResult.Invariant).results }
+                            }
+                            localResultSaver.saveInvariantResult(results)
+                        }
                     }
-                    localResultSaver.saveResult(results)
                     println("Results saved")
                 }
             }
@@ -92,9 +111,10 @@ class ClientStandaloneApp(private val argsManager: ArgsManager) {
 
     private fun printResult() {
         println("Total: ${total.get()}")
+
         val simpleAns = mutableListOf<Int>()
         repeat(Graph.MAX_N) {
-            simpleAns.add(ans.get(it))
+            simpleAns.add(ansInvariant.get(it))
         }
         simpleAns.forEachIndexed { index, count ->
             println("$index: $count")
