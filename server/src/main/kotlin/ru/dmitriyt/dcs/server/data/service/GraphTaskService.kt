@@ -8,11 +8,13 @@ import ru.dmitriyt.dcs.proto.GraphTaskGrpcKt
 import ru.dmitriyt.dcs.proto.GraphTaskProto
 import ru.dmitriyt.dcs.server.data.mapper.GraphTaskMapper
 import java.util.*
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 
 class GraphTaskService(
     private val isDebug: Boolean,
-    private val partSize: Int = 1000,
+    private val n: Int,
+    private val partSize: Int,
     private val startTaskHandler: (Int) -> Unit,
     private val endTaskHandler: suspend (result: TaskResult, taskInProgress: Int) -> Unit,
     private val onGraphEmpty: () -> Unit,
@@ -24,14 +26,15 @@ class GraphTaskService(
     override suspend fun getTask(
         request: GraphTaskProto.GetTaskRequest
     ): GraphTaskProto.GetTaskResponse {
-        val graphs = mutableListOf<String>()
-        repeat(partSize) {
-            readLine()?.let { graphs.add(it) } ?: run {
-                return@repeat
-            }
-        }
+        val graphs = listOf("")
+//        val graphs = mutableListOf<String>()
+//        repeat(partSize) {
+//            readLine()?.let { graphs.add(it) } ?: run {
+//                return@repeat
+//            }
+//        }
         try {
-            return if (graphs.isEmpty()) {
+            return if (taskId.get() >= 100) {
                 currentTasksMutex.withLock {
                     tasks.firstOrNull() ?: run {
                         onGraphEmpty()
@@ -39,12 +42,12 @@ class GraphTaskService(
                     }
                 }
             } else {
-                if (graphs.size != partSize) {
-                    onGraphEmpty()
-                }
+//                if (graphs.size != partSize) {
+//                    onGraphEmpty()
+//                }
                 startTaskHandler(graphs.size)
                 val localTaskId = taskId.getAndIncrement()
-                val response = buildTaskResponse(Task(localTaskId, graphs))
+                val response = buildTaskResponse(Task(localTaskId, localTaskId, n))
                 currentTasksMutex.withLock {
                     tasks.add(response)
                 }
@@ -63,7 +66,7 @@ class GraphTaskService(
         currentTasksMutex.withLock {
             tasks.find { it.task.id == taskId }?.let {
                 tasks.remove(it)
-                val taskResult = GraphTaskMapper.fromApiToModel(request.taskResult, it.task.graphsList)
+                val taskResult = GraphTaskMapper.fromApiToModel(request.taskResult, emptyList())
                 endTaskHandler(taskResult, tasks.size)
             } ?: run {
                 if (isDebug) {

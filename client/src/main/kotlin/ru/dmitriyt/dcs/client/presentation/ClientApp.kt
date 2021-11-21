@@ -30,6 +30,7 @@ class ClientApp(private val argsManager: ArgsManager) {
             repository.get().getTask()
         }, resultHandler = {
             try {
+//                println("try send result taskId = ${it.taskId} processed = ${it.processedGraphs}")
                 repository.get().sendResult(it)
                 completedTaskCount.getAndIncrement()
             } catch (e: Exception) {

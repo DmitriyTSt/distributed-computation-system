@@ -9,7 +9,8 @@ object GraphTaskMapper {
     fun fromModelToApi(task: Task): GraphTaskProto.Task {
         return GraphTaskProto.Task.newBuilder()
             .setId(task.id)
-            .addAllGraphs(task.graphs)
+            .setPartNumber(task.partNumber)
+            .setN(task.n)
             .build()
     }
 
@@ -26,7 +27,7 @@ object GraphTaskMapper {
                 processedGraphs = taskResult.processedGraphs,
                 results = taskResult.resultInvariant.resultsList.mapIndexed { index, result ->
                     GraphResult(
-                        graphs[index],
+                        "",
                         result
                     )
                 }

@@ -39,6 +39,7 @@ class ServerApp(private val argsManager: ArgsManager) {
         .addService(
             GraphTaskService(
                 isDebug = argsManager.isDebug,
+                n = argsManager.n,
                 partSize = argsManager.partSize,
                 startTaskHandler = ::handleStart,
                 endTaskHandler = ::handleResult,
@@ -105,15 +106,16 @@ class ServerApp(private val argsManager: ArgsManager) {
 
         if (argsManager.isDebug) {
             println(
-                "total = %d, processed = %d, inProgress = %d, isCompleted = %s".format(
+                "total = %d, processed = %d, inProgress = %d, isCompleted = %s, inThisTask = %d".format(
                     total.get(),
                     processedGraphs.get(),
                     tasksInProgress,
                     isCompleted.toString(),
+                    taskResult.processedGraphs,
                 )
             )
         }
-        if (this.total.get() <= processedGraphs.get() && tasksInProgress == 0 && isCompleted) {
+        if (processedGraphs.get() >= 12005168) {
             finishMutex.withLock {
                 if (!resultHandled) {
                     resultHandled = true
