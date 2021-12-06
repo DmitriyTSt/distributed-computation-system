@@ -11,6 +11,8 @@ object GraphTaskMapper {
             id = task.id,
             partNumber = task.partNumber,
             n = task.n,
+            args = task.args,
+            isSpecialEmpty = task.isSpecialEmpty,
         )
     }
 

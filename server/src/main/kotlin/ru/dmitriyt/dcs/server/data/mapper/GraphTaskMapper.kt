@@ -11,6 +11,8 @@ object GraphTaskMapper {
             .setId(task.id)
             .setPartNumber(task.partNumber)
             .setN(task.n)
+            .setArgs(task.args)
+            .setIsSpecialEmpty(task.isSpecialEmpty)
             .build()
     }
 

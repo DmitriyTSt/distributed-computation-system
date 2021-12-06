@@ -2,6 +2,8 @@ package ru.dmitriyt.dcs.client.data.solver
 
 import ru.dmitriyt.dcs.client.domain.GraphTaskInfo
 import ru.dmitriyt.dcs.client.domain.solver.TaskSolver
+import ru.dmitriyt.dcs.client.logd
+import ru.dmitriyt.dcs.core.data.DefaultConfig
 import ru.dmitriyt.dcs.core.data.GraphResult
 import ru.dmitriyt.dcs.core.data.Task
 import ru.dmitriyt.dcs.core.data.TaskResult
@@ -16,11 +18,11 @@ import kotlin.streams.toList
 class SingleSolver(private val graphTaskInfo: GraphTaskInfo) : TaskSolver {
 
     override fun run(inputProvider: () -> Task, resultHandler: (TaskResult) -> Unit, onFinish: () -> Unit) {
-//        println("run $this")
+        logd("run $this")
         var task = inputProvider()
-//        println("run $task")
+        logd("run $task")
         var graphs = getGraphsFromTask(task)
-        while (graphs.isNotEmpty()) {
+        while (!task.isSpecialEmpty) {
             resultHandler(
                 when (graphTaskInfo) {
                     is GraphTaskInfo.Invariant -> TaskResult.Invariant(
@@ -37,19 +39,26 @@ class SingleSolver(private val graphTaskInfo: GraphTaskInfo) : TaskSolver {
 
             )
             task = inputProvider()
-//            println("run $task")
+            logd("run $task")
             graphs = getGraphsFromTask(task)
         }
         onFinish()
     }
 
     private fun getGraphsFromTask(task: Task): List<String> {
-//        println("get graphs from task ${task}")
+        logd("get graphs from task $task")
         val list = task.graphs.ifEmpty {
             val graphs = mutableListOf<String>()
-            if (task.partNumber < 100) {
+            if (task.partNumber < DefaultConfig.GENG_PARTS_COUNT) {
                 try {
-                    val process = ProcessBuilder("./geng", "${task.n}", "${task.partNumber}/100")
+                    val commandList = listOfNotNull(
+                        "./geng",
+                        task.args.takeIf { it.isNotEmpty() },
+                        task.n.toString(),
+                        "${task.partNumber}/${DefaultConfig.GENG_PARTS_COUNT}",
+                    )
+                    logd("generate command: ${commandList.joinToString(" ")}")
+                    val process = ProcessBuilder(*commandList.toTypedArray())
                         .directory(File(System.getProperty("user.dir"))).start()
 
                     val reader = BufferedReader(
@@ -64,7 +73,7 @@ class SingleSolver(private val graphTaskInfo: GraphTaskInfo) : TaskSolver {
             }
             graphs
         }
-//        println("task ${task.id} size = ${list.size}")
+        logd("task ${task.id} size = ${list.size}")
         return list
     }
 }

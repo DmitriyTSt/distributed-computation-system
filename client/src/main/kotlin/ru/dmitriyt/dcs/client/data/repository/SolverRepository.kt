@@ -5,6 +5,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.withContext
 import ru.dmitriyt.dcs.client.domain.GraphTaskInfo
+import ru.dmitriyt.dcs.client.logd
 import ru.dmitriyt.dcs.core.GraphCondition
 import ru.dmitriyt.dcs.core.GraphInvariant
 import ru.dmitriyt.dcs.core.data.classloader.SolverClassLoader
@@ -42,8 +43,11 @@ class SolverRepository(address: String, port: Int) : Closeable {
      */
     suspend fun load(): GraphTaskInfo {
         val solverId = getCurrentSolverId()
+        logd("solverId = $solverId")
         val graphInvariant = solverClassLoader.load<GraphInvariant>(solverId)
         val graphCondition = solverClassLoader.load<GraphCondition>(solverId)
+        logd("graphInvariant = $graphInvariant")
+        logd("graphCondition = $graphCondition")
         return when {
             graphInvariant != null -> GraphTaskInfo.Invariant(graphInvariant)
             graphCondition != null -> GraphTaskInfo.Condition(graphCondition)

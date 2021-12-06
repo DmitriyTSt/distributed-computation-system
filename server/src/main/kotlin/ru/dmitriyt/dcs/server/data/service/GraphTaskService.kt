@@ -1,19 +1,24 @@
 package ru.dmitriyt.dcs.server.data.service
 
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import ru.dmitriyt.dcs.core.data.DefaultConfig
 import ru.dmitriyt.dcs.core.data.Task
 import ru.dmitriyt.dcs.core.data.TaskResult
 import ru.dmitriyt.dcs.proto.GraphTaskGrpcKt
 import ru.dmitriyt.dcs.proto.GraphTaskProto
 import ru.dmitriyt.dcs.server.data.mapper.GraphTaskMapper
+import ru.dmitriyt.dcs.server.loge
+import ru.dmitriyt.dcs.server.logd
 import java.util.*
-import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 
 class GraphTaskService(
-    private val isDebug: Boolean,
     private val n: Int,
+    private val generatorArgs: String,
     private val startTaskHandler: (Int) -> Unit,
     private val endTaskHandler: suspend (result: TaskResult, taskInProgress: Int) -> Unit,
     private val onGraphEmpty: () -> Unit,
@@ -27,24 +32,28 @@ class GraphTaskService(
     ): GraphTaskProto.GetTaskResponse {
         val graphs = listOf("")
         try {
-            return if (taskId.get() >= 100) {
+            return if (taskId.get() >= DefaultConfig.GENG_PARTS_COUNT) {
                 currentTasksMutex.withLock {
-                    tasks.firstOrNull() ?: run {
-                        onGraphEmpty()
-                        buildTaskResponse(Task.EMPTY)
-                    }
+                    logd("get task send task id ${tasks.firstOrNull()?.task?.id}")
+                    tasks.firstOrNull()
+                        ?: run {
+                            onGraphEmpty()
+                            logd("get task send empty")
+                            buildTaskResponse(Task.EMPTY)
+                        }
                 }
             } else {
                 startTaskHandler(graphs.size)
                 val localTaskId = taskId.getAndIncrement()
-                val response = buildTaskResponse(Task(localTaskId, localTaskId, n))
+                val response = buildTaskResponse(Task(localTaskId, localTaskId, n, generatorArgs))
                 currentTasksMutex.withLock {
                     tasks.add(response)
                 }
+                logd("get task send task id ${response.task.id}")
                 response
             }
         } catch (e: Exception) {
-            e.printStackTrace()
+            loge(e)
             return buildTaskResponse(Task.EMPTY)
         }
     }
@@ -57,11 +66,12 @@ class GraphTaskService(
             tasks.find { it.task.id == taskId }?.let {
                 tasks.remove(it)
                 val taskResult = GraphTaskMapper.fromApiToModel(request.taskResult, emptyList())
-                endTaskHandler(taskResult, tasks.size)
-            } ?: run {
-                if (isDebug) {
-                    println("task processed yet")
+                // любое завершение запускаем в отдельном скоуп, чтобы выполнился ретурн
+                CoroutineScope(Dispatchers.Unconfined).launch {
+                    endTaskHandler(taskResult, tasks.size)
                 }
+            } ?: run {
+                logd("task processed yet")
             }
         }
         return GraphTaskProto.SendTaskResultResponse.newBuilder().build()
