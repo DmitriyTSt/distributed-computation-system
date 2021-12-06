@@ -40,7 +40,6 @@ class ServerApp(private val argsManager: ArgsManager) {
             GraphTaskService(
                 isDebug = argsManager.isDebug,
                 n = argsManager.n,
-                partSize = argsManager.partSize,
                 startTaskHandler = ::handleStart,
                 endTaskHandler = ::handleResult,
                 onGraphEmpty = { isCompleted = true },

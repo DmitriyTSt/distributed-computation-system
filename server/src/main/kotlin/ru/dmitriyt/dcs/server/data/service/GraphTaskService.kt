@@ -14,7 +14,6 @@ import java.util.concurrent.atomic.AtomicInteger
 class GraphTaskService(
     private val isDebug: Boolean,
     private val n: Int,
-    private val partSize: Int,
     private val startTaskHandler: (Int) -> Unit,
     private val endTaskHandler: suspend (result: TaskResult, taskInProgress: Int) -> Unit,
     private val onGraphEmpty: () -> Unit,
@@ -27,12 +26,6 @@ class GraphTaskService(
         request: GraphTaskProto.GetTaskRequest
     ): GraphTaskProto.GetTaskResponse {
         val graphs = listOf("")
-//        val graphs = mutableListOf<String>()
-//        repeat(partSize) {
-//            readLine()?.let { graphs.add(it) } ?: run {
-//                return@repeat
-//            }
-//        }
         try {
             return if (taskId.get() >= 100) {
                 currentTasksMutex.withLock {
@@ -42,9 +35,6 @@ class GraphTaskService(
                     }
                 }
             } else {
-//                if (graphs.size != partSize) {
-//                    onGraphEmpty()
-//                }
                 startTaskHandler(graphs.size)
                 val localTaskId = taskId.getAndIncrement()
                 val response = buildTaskResponse(Task(localTaskId, localTaskId, n))
