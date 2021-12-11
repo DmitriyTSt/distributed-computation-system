@@ -29,7 +29,7 @@ object GraphTaskMapper {
                 processedGraphs = taskResult.processedGraphs,
                 results = taskResult.resultInvariant.resultsList.mapIndexed { index, result ->
                     GraphResult(
-                        "",
+                        graphs.getOrElse(index) { "" },
                         result
                     )
                 }

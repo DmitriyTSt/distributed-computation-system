@@ -1,5 +1,8 @@
 package ru.dmitriyt.dcs.server.presentation
 
+import ru.dmitriyt.dcs.core.data.DefaultConfig
+import ru.dmitriyt.dcs.core.data.Task
+import ru.dmitriyt.dcs.proto.GraphTaskProto
 import ru.dmitriyt.dcs.server.logd
 import java.io.BufferedReader
 import java.io.File
@@ -31,5 +34,32 @@ object GraphUtils {
         return lines.find { it.startsWith(">Z") }?.let { line ->
             line.split(" ").getOrNull(1)?.toIntOrNull()
         } ?: 0
+    }
+
+    fun getGraphs(task: GraphTaskProto.Task): List<String> {
+        val graphs = mutableListOf<String>()
+        if (task.partNumber < DefaultConfig.GENG_PARTS_COUNT) {
+            try {
+                val commandList = listOfNotNull(
+                    "./geng",
+                    task.args.takeIf { it.isNotEmpty() },
+                    task.n.toString(),
+                    "${task.partNumber}/${DefaultConfig.GENG_PARTS_COUNT}",
+                )
+                logd("generate command: ${commandList.joinToString(" ")}")
+                val process = ProcessBuilder(*commandList.toTypedArray())
+                    .directory(File(System.getProperty("user.dir"))).start()
+
+                val reader = BufferedReader(
+                    InputStreamReader(
+                        process.inputStream
+                    )
+                )
+                graphs.addAll(reader.lines().toList().filter { !it.startsWith(">") })
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+        return graphs
     }
 }

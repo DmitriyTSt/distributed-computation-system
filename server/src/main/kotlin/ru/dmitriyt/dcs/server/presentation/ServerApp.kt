@@ -42,6 +42,7 @@ class ServerApp(private val argsManager: ArgsManager) {
             GraphTaskService(
                 n = argsManager.n,
                 generatorArgs = argsManager.generatorArgs,
+                needSaving = argsManager.needSaving,
                 startTaskHandler = ::handleStart,
                 endTaskHandler = ::handleResult,
                 onGraphEmpty = { isCompleted = true },

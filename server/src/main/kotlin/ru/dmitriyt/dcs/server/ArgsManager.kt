@@ -10,7 +10,6 @@ class ArgsManager(_args: Array<String>) {
     val isInfo = args.contains("-i")
     val solverId = getParam("-j")
     val port = getParam("--port")?.toIntOrNull() ?: DefaultConfig.DEFAULT_PORT
-    val partSize = getParam("-p")?.toIntOrNull() ?: DefaultConfig.DEFAULT_PART_SIZE
     val generatorArgs = getParam("--args").orEmpty()
     val needSaving = args.contains("-s")
 

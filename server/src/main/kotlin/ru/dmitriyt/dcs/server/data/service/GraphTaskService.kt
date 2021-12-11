@@ -11,14 +11,16 @@ import ru.dmitriyt.dcs.core.data.TaskResult
 import ru.dmitriyt.dcs.proto.GraphTaskGrpcKt
 import ru.dmitriyt.dcs.proto.GraphTaskProto
 import ru.dmitriyt.dcs.server.data.mapper.GraphTaskMapper
-import ru.dmitriyt.dcs.server.loge
 import ru.dmitriyt.dcs.server.logd
+import ru.dmitriyt.dcs.server.loge
+import ru.dmitriyt.dcs.server.presentation.GraphUtils
 import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
 
 class GraphTaskService(
     private val n: Int,
     private val generatorArgs: String,
+    private val needSaving: Boolean,
     private val startTaskHandler: (Int) -> Unit,
     private val endTaskHandler: suspend (result: TaskResult, taskInProgress: Int) -> Unit,
     private val onGraphEmpty: () -> Unit,
@@ -65,7 +67,10 @@ class GraphTaskService(
         currentTasksMutex.withLock {
             tasks.find { it.task.id == taskId }?.let {
                 tasks.remove(it)
-                val taskResult = GraphTaskMapper.fromApiToModel(request.taskResult, emptyList())
+                val taskResult = GraphTaskMapper.fromApiToModel(
+                    request.taskResult,
+                    if (needSaving) GraphUtils.getGraphs(it.task) else emptyList()
+                )
                 // любое завершение запускаем в отдельном скоуп, чтобы выполнился ретурн
                 CoroutineScope(Dispatchers.Unconfined).launch {
                     endTaskHandler(taskResult, tasks.size)
