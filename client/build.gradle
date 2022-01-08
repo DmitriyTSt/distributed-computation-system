@@ -7,7 +7,7 @@ plugins {
 }
 
 group 'ru.dmitriyt.dcs.client'
-version '1.1'
+version rootProject.ext.dcsVersion
 
 repositories {
     mavenCentral()

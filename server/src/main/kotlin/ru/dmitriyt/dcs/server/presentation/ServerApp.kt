@@ -133,7 +133,7 @@ class ServerApp(private val argsManager: ArgsManager) {
                     endTime = System.currentTimeMillis()
                     printResult()
                     if (argsManager.needSaving) {
-                        val localResultSaver = ResultSaver(argsManager.solverId.orEmpty(), total)
+                        val localResultSaver = ResultSaver(argsManager.solverId.orEmpty(), argsManager.n, total)
                         println("Saving results")
                         when (taskResults.firstOrNull()) {
                             is TaskResult.Graphs -> {
