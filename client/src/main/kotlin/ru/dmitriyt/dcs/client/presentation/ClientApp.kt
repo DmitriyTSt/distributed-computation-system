@@ -7,8 +7,8 @@ import ru.dmitriyt.dcs.client.data.repository.GraphTaskRepository
 import ru.dmitriyt.dcs.client.data.repository.SolverRepository
 import ru.dmitriyt.dcs.client.data.solver.MultiThreadSolver
 import ru.dmitriyt.dcs.client.data.solver.SingleSolver
-import ru.dmitriyt.dcs.client.loge
 import ru.dmitriyt.dcs.client.logd
+import ru.dmitriyt.dcs.client.loge
 import ru.dmitriyt.dcs.core.data.Task
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -18,6 +18,7 @@ class ClientApp(private val argsManager: ArgsManager) {
     }
     private val completedTaskCount = AtomicInteger(0)
     private val solverRepository = SolverRepository(argsManager.serverAddress, argsManager.port)
+    private var isTerminated = false
 
     fun start() = runBlocking {
         println("Client onStart")
@@ -31,7 +32,11 @@ class ClientApp(private val argsManager: ArgsManager) {
         }
         solver.run(inputProvider = {
             try {
-                repository.get().getTask()
+                if (isTerminated) {
+                    Task.EMPTY
+                } else {
+                    repository.get().getTask()
+                }
             } catch (e: StatusRuntimeException) {
                 loge(e)
                 Task.EMPTY
@@ -50,5 +55,9 @@ class ClientApp(private val argsManager: ArgsManager) {
 
         println("client on close")
         println("Solved tasks count : ${completedTaskCount.get()}")
+    }
+
+    fun softStop() {
+        isTerminated = true
     }
 }
