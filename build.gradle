@@ -29,5 +29,5 @@ repositories {
 }
 
 ext {
-    coreVersion = "1.1"
+    coreVersion = "1.2"
 }

@@ -7,7 +7,7 @@ service SolverLoader {
   // Скачать джарник для решения задачи GetSolverRequest.solver_id
   rpc GetSolver(GetSolverRequest) returns (stream GetSolverResponse);
   // Получить текущий идентификатор задачи, запущенной на сервере
-  rpc GetCurrentSolverId(GetCurrentSolverIdRequest) returns (GetCurrentSolverIdResponse);
+  rpc GetCurrentSolver(GetCurrentSolverRequest) returns (GetCurrentSolverResponse);
 }
 
 message GetSolverRequest {
@@ -18,8 +18,9 @@ message GetSolverResponse {
   bytes data = 1;
 }
 
-message GetCurrentSolverIdRequest {}
+message GetCurrentSolverRequest {}
 
-message GetCurrentSolverIdResponse {
+message GetCurrentSolverResponse {
   string solver_id = 1;
+  int32 solver_version = 2;
 }

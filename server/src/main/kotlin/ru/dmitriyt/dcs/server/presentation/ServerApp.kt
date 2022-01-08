@@ -22,6 +22,7 @@ import kotlin.system.exitProcess
 
 class ServerApp(private val argsManager: ArgsManager) {
     private var isInvariantSolver = false
+    private var solverVersion = 0
     private val ansInvariant = AtomicIntegerArray(Graph.MAX_N)
     private val ansCondition = AtomicInteger(0)
     private var total = 0
@@ -48,7 +49,11 @@ class ServerApp(private val argsManager: ArgsManager) {
                 onGraphEmpty = { isCompleted = true },
             )
         )
-        .addService(SolverLoaderService(solverId = argsManager.solverId.orEmpty()))
+        .addService(
+            SolverLoaderService(
+                solverId = argsManager.solverId.orEmpty(),
+                getSolverVersion = { solverVersion })
+        )
         .build()
 
     fun start() {
@@ -59,13 +64,6 @@ class ServerApp(private val argsManager: ArgsManager) {
         logd("before total")
         total = GraphUtils.getGraphsCount(argsManager.n, argsManager.generatorArgs)
         logd("after total = $total")
-        server.start()
-        println("Server started at port ${argsManager.port}")
-        Runtime.getRuntime().addShutdownHook(
-            Thread {
-                server.shutdown()
-            }
-        )
 
         // проверка корректности поданной задачи (инвариант или проверка на условие)
         val invariantSolver = solverClassLoader.load<GraphInvariant>(argsManager.solverId)
@@ -78,6 +76,15 @@ class ServerApp(private val argsManager: ArgsManager) {
             )
             exitProcess(1)
         }
+        solverVersion = invariantSolver?.version ?: conditionSolver?.version ?: 0
+
+        server.start()
+        println("Server started at port ${argsManager.port}")
+        Runtime.getRuntime().addShutdownHook(
+            Thread {
+                server.shutdown()
+            }
+        )
 
         server.awaitTermination()
     }
