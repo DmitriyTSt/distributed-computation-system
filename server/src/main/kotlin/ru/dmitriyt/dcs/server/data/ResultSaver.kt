@@ -3,6 +3,9 @@ package ru.dmitriyt.dcs.server.data
 import ru.dmitriyt.dcs.core.data.GraphResult
 import java.io.File
 
+/**
+ * Сохранение результатов подсчета.
+ */
 class ResultSaver(solverId: String, total: Int) {
     private val resultDirectory = File("result")
     private val file = File("result/${solverId}_$total.txt")

@@ -14,15 +14,18 @@ import ru.dmitriyt.dcs.server.ArgsManager
 import ru.dmitriyt.dcs.server.data.ResultSaver
 import ru.dmitriyt.dcs.server.data.service.GraphTaskService
 import ru.dmitriyt.dcs.server.data.service.SolverLoaderService
+import ru.dmitriyt.dcs.server.logd
+import ru.dmitriyt.dcs.server.logi
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicIntegerArray
 import kotlin.system.exitProcess
 
 class ServerApp(private val argsManager: ArgsManager) {
     private var isInvariantSolver = false
+    private var solverVersion = 0
     private val ansInvariant = AtomicIntegerArray(Graph.MAX_N)
     private val ansCondition = AtomicInteger(0)
-    private var total = AtomicInteger(0)
+    private var total = 0
     private var startTime = 0L
     private var endTime = 0L
     private var processedGraphs = AtomicInteger(0)
@@ -38,14 +41,19 @@ class ServerApp(private val argsManager: ArgsManager) {
         .forPort(argsManager.port)
         .addService(
             GraphTaskService(
-                isDebug = argsManager.isDebug,
-                partSize = argsManager.partSize,
+                n = argsManager.n,
+                generatorArgs = argsManager.generatorArgs,
+                needSaving = argsManager.needSaving,
                 startTaskHandler = ::handleStart,
                 endTaskHandler = ::handleResult,
                 onGraphEmpty = { isCompleted = true },
             )
         )
-        .addService(SolverLoaderService(solverId = argsManager.solverId.orEmpty()))
+        .addService(
+            SolverLoaderService(
+                solverId = argsManager.solverId.orEmpty(),
+                getSolverVersion = { solverVersion })
+        )
         .build()
 
     fun start() {
@@ -53,13 +61,9 @@ class ServerApp(private val argsManager: ArgsManager) {
             System.err.println("-j task solver classpath is required")
             exitProcess(1)
         }
-        server.start()
-        println("Server started at port ${argsManager.port}")
-        Runtime.getRuntime().addShutdownHook(
-            Thread {
-                server.shutdown()
-            }
-        )
+        logd("before total")
+        total = GraphUtils.getGraphsCount(argsManager.n, argsManager.generatorArgs)
+        logd("after total = $total")
 
         // проверка корректности поданной задачи (инвариант или проверка на условие)
         val invariantSolver = solverClassLoader.load<GraphInvariant>(argsManager.solverId)
@@ -72,6 +76,15 @@ class ServerApp(private val argsManager: ArgsManager) {
             )
             exitProcess(1)
         }
+        solverVersion = invariantSolver?.version ?: conditionSolver?.version ?: 0
+
+        server.start()
+        println("Server started at port ${argsManager.port}")
+        Runtime.getRuntime().addShutdownHook(
+            Thread {
+                server.shutdown()
+            }
+        )
 
         server.awaitTermination()
     }
@@ -80,11 +93,11 @@ class ServerApp(private val argsManager: ArgsManager) {
         if (startTime == 0L) {
             startTime = System.currentTimeMillis()
         }
-        total.getAndAdd(partSize)
     }
 
     private suspend fun handleResult(taskResult: TaskResult, tasksInProgress: Int) {
         processedGraphs.getAndAdd(taskResult.processedGraphs)
+        logi("processed = ${processedGraphs.get()}")
 
         when (taskResult) {
             is TaskResult.Graphs -> {
@@ -103,24 +116,24 @@ class ServerApp(private val argsManager: ArgsManager) {
             }
         }
 
-        if (argsManager.isDebug) {
-            println(
-                "total = %d, processed = %d, inProgress = %d, isCompleted = %s".format(
-                    total.get(),
-                    processedGraphs.get(),
-                    tasksInProgress,
-                    isCompleted.toString(),
-                )
+        logd(
+            "total = %d, processed = %d, inProgress = %d, isCompleted = %s, inThisTask = %d".format(
+                total,
+                processedGraphs.get(),
+                tasksInProgress,
+                isCompleted.toString(),
+                taskResult.processedGraphs,
             )
-        }
-        if (this.total.get() <= processedGraphs.get() && tasksInProgress == 0 && isCompleted) {
+        )
+
+        if (processedGraphs.get() >= total) {
             finishMutex.withLock {
                 if (!resultHandled) {
                     resultHandled = true
                     endTime = System.currentTimeMillis()
                     printResult()
                     if (argsManager.needSaving) {
-                        val localResultSaver = ResultSaver(argsManager.solverId.orEmpty(), total.get())
+                        val localResultSaver = ResultSaver(argsManager.solverId.orEmpty(), total)
                         println("Saving results")
                         when (taskResults.firstOrNull()) {
                             is TaskResult.Graphs -> {
@@ -146,7 +159,7 @@ class ServerApp(private val argsManager: ArgsManager) {
     }
 
     private fun printResult() {
-        println("Total: ${total.get()}")
+        println("Total: $total")
         if (isInvariantSolver) {
             val simpleAns = mutableListOf<Int>()
             repeat(Graph.MAX_N) {

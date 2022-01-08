@@ -9,7 +9,10 @@ object GraphTaskMapper {
     fun fromApiToModel(task: GraphTaskProto.Task): Task {
         return Task(
             id = task.id,
-            graphs = task.graphsList,
+            partNumber = task.partNumber,
+            n = task.n,
+            args = task.args,
+            isSpecialEmpty = task.isSpecialEmpty,
         )
     }
 

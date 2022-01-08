@@ -1,12 +1,18 @@
 package ru.dmitriyt.dcs.server.data.service
 
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.asFlow
+import kotlinx.coroutines.flow.cancellable
+import kotlinx.coroutines.flow.map
 import ru.dmitriyt.dcs.proto.SolverLoaderGrpcKt
 import ru.dmitriyt.dcs.proto.SolverLoaderProto
 import ru.dmitriyt.dcs.server.data.mapper.SolverLoaderMapper
 import java.io.File
 
-class SolverLoaderService(private val solverId: String) : SolverLoaderGrpcKt.SolverLoaderCoroutineImplBase() {
+class SolverLoaderService(
+    private val solverId: String,
+    private val getSolverVersion: () -> Int,
+) : SolverLoaderGrpcKt.SolverLoaderCoroutineImplBase() {
 
     companion object {
         private const val SOLVERS_DIR = "tasks/"
@@ -26,9 +32,12 @@ class SolverLoaderService(private val solverId: String) : SolverLoaderGrpcKt.Sol
             .cancellable()
     }
 
-    override suspend fun getCurrentSolverId(
-        request: SolverLoaderProto.GetCurrentSolverIdRequest
-    ): SolverLoaderProto.GetCurrentSolverIdResponse {
-        return SolverLoaderProto.GetCurrentSolverIdResponse.newBuilder().setSolverId(solverId).build()
+    override suspend fun getCurrentSolver(
+        request: SolverLoaderProto.GetCurrentSolverRequest
+    ): SolverLoaderProto.GetCurrentSolverResponse {
+        return SolverLoaderProto.GetCurrentSolverResponse.newBuilder()
+            .setSolverId(solverId)
+            .setSolverVersion(getSolverVersion())
+            .build()
     }
 }

@@ -2,6 +2,7 @@ package ru.dmitriyt.dcs.client.data.repository
 
 import io.grpc.ManagedChannelBuilder
 import ru.dmitriyt.dcs.client.data.mapper.GraphTaskMapper
+import ru.dmitriyt.dcs.client.loge
 import ru.dmitriyt.dcs.core.data.Task
 import ru.dmitriyt.dcs.core.data.TaskResult
 import ru.dmitriyt.dcs.proto.GraphTaskGrpc
@@ -18,6 +19,7 @@ class GraphTaskRepository(server: String, port: Int) : Closeable {
                 GraphTaskProto.GetTaskRequest.newBuilder().build()
             ).task.let { GraphTaskMapper.fromApiToModel(it) }
         } catch (e: Exception) {
+            loge(e)
             Task.EMPTY
         }
     }

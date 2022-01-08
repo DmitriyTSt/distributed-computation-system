@@ -15,7 +15,7 @@ plugins {
 }
 
 group 'ru.dmitriyt.dcs'
-version '1.1'
+version '1.2'
 
 allprojects {
     repositories {
@@ -29,5 +29,5 @@ repositories {
 }
 
 ext {
-    coreVersion = "1.1"
+    coreVersion = "1.2"
 }

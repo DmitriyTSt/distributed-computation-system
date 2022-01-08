@@ -17,10 +17,6 @@ import java.util.concurrent.atomic.AtomicIntegerArray
 
 class ClientStandaloneApp(private val argsManager: ArgsManager) {
 
-    companion object {
-        private const val PART_SIZE = 1000
-    }
-
     private lateinit var graphTaskInfo: GraphTaskInfo
     private val taskResults = mutableListOf<TaskResult>()
     private val taskId = AtomicInteger(0)
@@ -46,7 +42,7 @@ class ClientStandaloneApp(private val argsManager: ArgsManager) {
         startTime = System.currentTimeMillis()
         solver.run(inputProvider = {
             val graphs = mutableListOf<String>()
-            repeat(PART_SIZE) {
+            repeat(argsManager.partSize) {
                 readLine()?.let { graphs.add(it) } ?: run {
                     return@repeat
                 }
@@ -59,6 +55,7 @@ class ClientStandaloneApp(private val argsManager: ArgsManager) {
             Task(
                 id = taskId.get(),
                 graphs = graphs,
+                isSpecialEmpty = graphs.isEmpty(),
             )
         }, resultHandler = { taskResult ->
             processedGraphs.getAndAdd(taskResult.processedGraphs)
@@ -79,8 +76,7 @@ class ClientStandaloneApp(private val argsManager: ArgsManager) {
                 }
             }
         }, onFinish = {
-            if (total.get() == processedGraphs.get() && isCompleted.get() && !isFinished.get()) {
-                isFinished.set(true)
+            if (total.get() == processedGraphs.get() && isCompleted.get() && !isFinished.getAndSet(true)) {
                 endTime = System.currentTimeMillis()
                 printResult()
                 if (argsManager.needSaving) {
