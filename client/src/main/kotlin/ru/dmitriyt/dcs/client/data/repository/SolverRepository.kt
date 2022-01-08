@@ -4,6 +4,7 @@ import io.grpc.ManagedChannelBuilder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.withContext
+import ru.dmitriyt.dcs.client.data.Solver
 import ru.dmitriyt.dcs.client.domain.GraphTaskInfo
 import ru.dmitriyt.dcs.client.logd
 import ru.dmitriyt.dcs.core.GraphCondition
@@ -20,7 +21,7 @@ class SolverRepository(address: String, port: Int) : Closeable {
     private val stub = SolverLoaderGrpcKt.SolverLoaderCoroutineStub(channel)
 
     /** Загрузчик локальных классов */
-    val solverClassLoader = SolverClassLoader()
+    private val solverClassLoader = SolverClassLoader()
 
     /**
      * Загружает локальный класс задачи
@@ -42,17 +43,19 @@ class SolverRepository(address: String, port: Int) : Closeable {
      * Загружает класс локально, или, если не найден, скачивает с сервера
      */
     suspend fun load(): GraphTaskInfo {
-        val solverId = getCurrentSolverId()
+        val solver = getCurrentSolver()
+        val solverId = solver.id
+        val solverVersion = solver.version
         logd("solverId = $solverId")
         val graphInvariant = solverClassLoader.load<GraphInvariant>(solverId)
         val graphCondition = solverClassLoader.load<GraphCondition>(solverId)
         logd("graphInvariant = $graphInvariant")
         logd("graphCondition = $graphCondition")
         return when {
-            graphInvariant != null -> GraphTaskInfo.Invariant(graphInvariant)
-            graphCondition != null -> GraphTaskInfo.Condition(graphCondition)
+            graphInvariant != null && graphInvariant.version == solverVersion -> GraphTaskInfo.Invariant(graphInvariant)
+            graphCondition != null && graphCondition.version == solverVersion -> GraphTaskInfo.Condition(graphCondition)
             else -> {
-                // если нет локально, пробуем загрузить с сервера
+                // если нет локально или версия меньше, пробуем загрузить с сервера
                 getTaskSolver(solverId)
                 val graphInvariantAfterLoad = solverClassLoader.load<GraphInvariant>(solverId)
                 val graphConditionAfterLoad = solverClassLoader.load<GraphCondition>(solverId)
@@ -75,6 +78,9 @@ class SolverRepository(address: String, port: Int) : Closeable {
         }
         val file = File("${SolverClassLoader.GRAPH_TASKS_DIRECTORY}/$solverId.jar")
         withContext(Dispatchers.IO) {
+            if (file.exists()) {
+                file.delete()
+            }
             file.createNewFile()
         }
         stub.getSolver(
@@ -87,8 +93,9 @@ class SolverRepository(address: String, port: Int) : Closeable {
         return file
     }
 
-    private suspend fun getCurrentSolverId(): String {
-        return stub.getCurrentSolverId(SolverLoaderProto.GetCurrentSolverIdRequest.newBuilder().build()).solverId
+    private suspend fun getCurrentSolver(): Solver {
+        return stub.getCurrentSolver(SolverLoaderProto.GetCurrentSolverRequest.newBuilder().build())
+            .let { Solver(it.solverId, it.solverVersion) }
     }
 
     override fun close() {
