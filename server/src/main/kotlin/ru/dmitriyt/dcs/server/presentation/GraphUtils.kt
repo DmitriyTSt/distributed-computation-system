@@ -1,7 +1,5 @@
 package ru.dmitriyt.dcs.server.presentation
 
-import ru.dmitriyt.dcs.core.data.DefaultConfig
-import ru.dmitriyt.dcs.core.data.Task
 import ru.dmitriyt.dcs.proto.GraphTaskProto
 import ru.dmitriyt.dcs.server.logd
 import java.io.BufferedReader
@@ -38,13 +36,13 @@ object GraphUtils {
 
     fun getGraphs(task: GraphTaskProto.Task): List<String> {
         val graphs = mutableListOf<String>()
-        if (task.partNumber < DefaultConfig.GENG_PARTS_COUNT) {
+        if (task.partNumber < task.partsCount) {
             try {
                 val commandList = listOfNotNull(
                     "./geng",
                     task.args.takeIf { it.isNotEmpty() },
                     task.n.toString(),
-                    "${task.partNumber}/${DefaultConfig.GENG_PARTS_COUNT}",
+                    "${task.partNumber}/${task.partsCount}",
                 )
                 logd("generate command: ${commandList.joinToString(" ")}")
                 val process = ProcessBuilder(*commandList.toTypedArray())

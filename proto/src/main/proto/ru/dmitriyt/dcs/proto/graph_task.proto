@@ -19,9 +19,10 @@ message GetTaskResponse {
 message Task {
   int32 id = 1;
   int32 partNumber = 2;
-  int32 n = 3;
-  string args = 4;
-  bool isSpecialEmpty = 5;
+  int32 partsCount = 3;
+  int32 n = 4;
+  string args = 5;
+  bool isSpecialEmpty = 6;
 }
 
 message SendTaskResultRequest {

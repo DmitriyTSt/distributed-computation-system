@@ -10,6 +10,7 @@ object GraphTaskMapper {
         return Task(
             id = task.id,
             partNumber = task.partNumber,
+            partsCount = task.partsCount,
             n = task.n,
             args = task.args,
             isSpecialEmpty = task.isSpecialEmpty,

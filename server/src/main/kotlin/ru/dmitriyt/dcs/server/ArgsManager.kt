@@ -12,6 +12,7 @@ class ArgsManager(_args: Array<String>) {
     val port = getParam("--port")?.toIntOrNull() ?: DefaultConfig.DEFAULT_PORT
     val generatorArgs = getParam("--args").orEmpty()
     val needSaving = args.contains("-s")
+    val partsCount = getParam("-p")?.toIntOrNull() ?: DefaultConfig.DEFAULT_PARTS_COUNT
 
     val n = getParam("-n")?.toIntOrNull() ?: run {
         System.err.println("-n is required")

@@ -49,13 +49,13 @@ class SingleSolver(private val graphTaskInfo: GraphTaskInfo) : TaskSolver {
         logd("get graphs from task $task")
         val list = task.graphs.ifEmpty {
             val graphs = mutableListOf<String>()
-            if (task.partNumber < DefaultConfig.GENG_PARTS_COUNT) {
+            if (task.partNumber < task.partsCount) {
                 try {
                     val commandList = listOfNotNull(
                         "./geng",
                         task.args.takeIf { it.isNotEmpty() },
                         task.n.toString(),
-                        "${task.partNumber}/${DefaultConfig.GENG_PARTS_COUNT}",
+                        "${task.partNumber}/${task.partsCount}",
                     )
                     logd("generate command: ${commandList.joinToString(" ")}")
                     val process = ProcessBuilder(*commandList.toTypedArray())
