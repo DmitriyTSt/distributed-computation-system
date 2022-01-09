@@ -3,6 +3,7 @@ package ru.dmitriyt.dcs.core.data
 data class Task(
     val id: Int,
     val partNumber: Int = 0,
+    val partsCount: Int = 0,
     val n: Int = 0,
     val args: String = "",
     val isSpecialEmpty: Boolean = false,
@@ -10,7 +11,7 @@ data class Task(
     val graphs: List<String> = emptyList(),
 ) {
     companion object {
-        val EMPTY = Task(0, 0, 0, "", true, emptyList())
+        val EMPTY = Task(0, 0, 0, 0, "", true, emptyList())
     }
 
     override fun toString(): String {

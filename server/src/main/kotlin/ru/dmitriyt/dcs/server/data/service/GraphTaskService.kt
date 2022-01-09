@@ -19,9 +19,10 @@ import java.util.concurrent.atomic.AtomicInteger
 
 class GraphTaskService(
     private val n: Int,
+    private val partsCount: Int,
     private val generatorArgs: String,
     private val needSaving: Boolean,
-    private val startTaskHandler: (Int) -> Unit,
+    private val startTaskHandler: () -> Unit,
     private val endTaskHandler: suspend (result: TaskResult, taskInProgress: Int) -> Unit,
     private val onGraphEmpty: () -> Unit,
 ) : GraphTaskGrpcKt.GraphTaskCoroutineImplBase() {
@@ -32,9 +33,8 @@ class GraphTaskService(
     override suspend fun getTask(
         request: GraphTaskProto.GetTaskRequest
     ): GraphTaskProto.GetTaskResponse {
-        val graphs = listOf("")
         try {
-            return if (taskId.get() >= DefaultConfig.GENG_PARTS_COUNT) {
+            return if (taskId.get() >= partsCount) {
                 currentTasksMutex.withLock {
                     logd("get task send task id ${tasks.firstOrNull()?.task?.id}")
                     tasks.firstOrNull()
@@ -45,9 +45,9 @@ class GraphTaskService(
                         }
                 }
             } else {
-                startTaskHandler(graphs.size)
+                startTaskHandler()
                 val localTaskId = taskId.getAndIncrement()
-                val response = buildTaskResponse(Task(localTaskId, localTaskId, n, generatorArgs))
+                val response = buildTaskResponse(Task(localTaskId, localTaskId, partsCount, n, generatorArgs))
                 currentTasksMutex.withLock {
                     tasks.add(response)
                 }

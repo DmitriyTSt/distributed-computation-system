@@ -10,6 +10,7 @@ object GraphTaskMapper {
         return GraphTaskProto.Task.newBuilder()
             .setId(task.id)
             .setPartNumber(task.partNumber)
+            .setPartsCount(task.partsCount)
             .setN(task.n)
             .setArgs(task.args)
             .setIsSpecialEmpty(task.isSpecialEmpty)

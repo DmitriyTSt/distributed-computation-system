@@ -42,6 +42,7 @@ class ServerApp(private val argsManager: ArgsManager) {
         .addService(
             GraphTaskService(
                 n = argsManager.n,
+                partsCount = argsManager.partsCount,
                 generatorArgs = argsManager.generatorArgs,
                 needSaving = argsManager.needSaving,
                 startTaskHandler = ::handleStart,
@@ -89,7 +90,7 @@ class ServerApp(private val argsManager: ArgsManager) {
         server.awaitTermination()
     }
 
-    private fun handleStart(partSize: Int) {
+    private fun handleStart() {
         if (startTime == 0L) {
             startTime = System.currentTimeMillis()
         }
