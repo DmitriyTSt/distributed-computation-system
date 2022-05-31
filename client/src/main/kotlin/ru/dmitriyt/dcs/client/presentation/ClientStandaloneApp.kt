@@ -65,7 +65,8 @@ class ClientStandaloneApp(private val argsManager: ArgsManager) {
                 }
                 is TaskResult.Invariant -> {
                     taskResult.results.forEach {
-                        ansInvariant.getAndIncrement(it.invariant)
+                        val invariant = it.invariant % 1000
+                        ansInvariant.getAndIncrement(invariant)
                     }
                 }
             }
